@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="API\Controllers\" />
+    <Folder Include="API\Middleware\" />
+    <Folder Include="Cores\DTO\" />
+    <Folder Include="Cores\Entities\" />
+    <Folder Include="Infrastructures\Data\DAO\" />
+    <Folder Include="Infrastructures\" />
+    <Folder Include="Cores\Models\Exceptions\" />
+    <Folder Include="Cores\Models\ViewModels\" />
+    <Folder Include="Infrastructures\Data\Repositories\" />
+    <Folder Include="API\Services\" />
+    <Folder Include="Infrastructures\Migrations\" />
+    <Folder Include="Utilities\Helpers\" />
+  </ItemGroup>
+
+</Project>

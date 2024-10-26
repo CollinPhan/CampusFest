@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
       <PrivateAssets>all</PrivateAssets>
@@ -23,18 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="API\Controllers\" />
-    <Folder Include="API\Middleware\" />
-    <Folder Include="Cores\DTO\" />
-    <Folder Include="Cores\Entities\" />
-    <Folder Include="Infrastructures\Data\DAO\" />
-    <Folder Include="Infrastructures\" />
-    <Folder Include="Cores\Models\Exceptions\" />
-    <Folder Include="Cores\Models\ViewModels\" />
-    <Folder Include="Infrastructures\Data\Repositories\" />
-    <Folder Include="API\Services\" />
+    <Folder Include="API\HostedServices\" />
     <Folder Include="Infrastructures\Migrations\" />
-    <Folder Include="Utilities\Helpers\" />
   </ItemGroup>
 
 </Project>

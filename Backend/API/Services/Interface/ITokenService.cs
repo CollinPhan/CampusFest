@@ -5,15 +5,20 @@ namespace Backend.API.Services.Interface
 {
     public interface ITokenService: IDisposable
     {
-        Task CreateToken(Guid userId, string reason, string? tokenValue, int duration);
+        Task<TokenDTO> CreateToken(Guid userId, string reason, string? tokenValue, int duration);
 
         Task DeleteToken(Guid tokenId);
 
         Task DeleteToken(string tokenValue);
 
-        TokenDTO GetLatestToken(Guid userId, string reason);
+        Task<TokenDTO> GetToken(Guid tokenEntry);
+
+        Task<bool> VerifyToken(Guid userId, string tokenValue, string reason);
+
+        Task<TokenDTO> GetLatestToken(Guid userId, string reason);
 
         string CreateAccessToken(Dictionary<string, string> data, int duration);
+
         string CreateRefreshToken(Dictionary<string, string> data, int duration);
 
         IEnumerable<TokenDTO> GetAllTokenForUser(Guid userId);
@@ -22,13 +27,11 @@ namespace Backend.API.Services.Interface
 
         string CreateBase64Token(Dictionary<string, string> data, int duration);
 
-        string CreateCustomToken(Dictionary<string, string> data, Expression<Func<Dictionary<string, string>, string>> function);
+        string CreateRandomToken(int length);
 
         Task<Dictionary<string, string>> DecodeJwtToken(string token);
 
         Dictionary<string, string> DecodeBase64Token(string token);
-
-        Dictionary<string, string> DecodeCustomToken(string token);
 
         bool IsValidJwtToken(string token);
 

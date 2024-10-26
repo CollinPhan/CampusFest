@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Reflection;
+using AutoMapper;
 using Backend.API.Services.Interface;
 using Backend.Cores.ViewModels;
 using Backend.Infrastructures.Data.DTO;
@@ -9,42 +10,43 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.API.Controllers
 {
     [Authorize]
-    [Route("api/user")]
+    [Route("api/account")]
     [ApiController]
     public class AccountController : ControllerBase
     {
         private readonly IAccountService accountService;
         private readonly ITokenService tokenService;
+        private readonly IEmailService emailService;
         private readonly IMapper mapper;
 
-        public AccountController(IAccountService accountService, ITokenService tokenService, IMapper mapper)
+        public AccountController(IAccountService accountService, ITokenService tokenService, IMapper mapper, IEmailService emailService)
         {
             this.accountService = accountService;
             this.tokenService = tokenService;
+            this.emailService = emailService;
             this.mapper = mapper;
         }
 
         [AllowAnonymous]
-        [HttpPost]
-        public ActionResult RefreshAccessToken([FromHeader] string oldRefreshToken)
-        {
-            var data = tokenService.DecodeBase64Token(oldRefreshToken);
-
-            var accessToken = tokenService.CreateAccessToken(data, 5);
-
-            var refreshToken = tokenService.CreateRefreshToken(data, 10);
-
-            return Ok(new { accessToken, refreshToken });
-        }
-
-        [AllowAnonymous]
-        [HttpGet("all")]
+        [HttpGet("list")]
         public async Task<ActionResult<IEnumerable<AccountPublicViewModel>>> GetAllAccountPublicInformation(int page = 1, int page_size = 10, string keyword = "", string sortBy = "Username", bool onlyVerified = false, bool includeDeleted = false)
         {
             return Ok(await accountService.GetAccountPaginated(page: page, page_size: page_size, username: keyword, sortby: sortBy, IncludeDeleted: includeDeleted, OnlyVerified: onlyVerified));
         }
 
         [Authorize]
+        [HttpGet]
+        public async Task<ActionResult<AccountPublicViewModel>> GetAccountPublicInformation()
+        {
+            string token = Request.Headers.Authorization.First<string>();
+
+            Dictionary<string,string> data = await tokenService.DecodeJwtToken(token.Split(" ")[1]); // Only getting the token without the "Bearer" part.
+
+            Console.WriteLine(string.Join(" ", data.Keys));
+
+            return Ok(await accountService.GetAccountInformation(Guid.Parse(data["user"])));
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<AccountPublicViewModel>> GetAccountPublicInformation(Guid id)
         {
@@ -52,31 +54,77 @@ namespace Backend.API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("authenticate")]
-        public async Task<IActionResult> AuthenticateUser([FromBody] AccountAuthorizationViewModel authorizationInfo)
-        {
-            AccountDTO account = await accountService.GetAccountInformation(authorizationInfo.Username, authorizationInfo.Password);
-
-            Dictionary<string, string> tokenInformation = new Dictionary<string, string>();
-
-            tokenInformation.Add("user", account.Id.ToString());
-            tokenInformation.Add("roles", String.Join(",", account.Roles));
-            tokenInformation.Add("verified", account.IsVerified ? "Yes" : "No");
-
-
-            var accessToken = tokenService.CreateJwtToken(tokenInformation, 5);
-            var refreshToken = tokenService.CreateBase64Token(tokenInformation, 5);
-
-            return Ok(new { accessToken, refreshToken });
-        }
-
-        [AllowAnonymous]
         [HttpPost("signup")]
         public async Task<IActionResult> CreateNewUser([FromBody] AccountCreationModel accountInfo)
         {
-            await accountService.AddAccount(mapper.Map<AccountCreationModel, AccountDTO>(accountInfo));
+            var account = mapper.Map<AccountCreationModel, AccountDTO>(accountInfo);
+
+            await accountService.AddAccount(account);
+            
+            var token = await tokenService.CreateToken(account.Id, "verifyUserAccount", tokenService.CreateRandomToken(10), 1440);
+
+            string emailSubject = "Account verification";
+            
+            string emailBody = System.IO.File.ReadAllText($"{Directory.GetCurrentDirectory()}\\Utilities\\Html\\verification.html").Replace("[0]", token.TokenValue);
+
+            await emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
 
             return Created();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("verify")]
+        public async Task<IActionResult> VerifyUserAccount([FromQuery] Guid userId, [FromQuery] string token)
+        {
+            if (await tokenService.VerifyToken(userId, token, "verifyUserAccount"))
+            {
+                await accountService.UpdateVerificationStatus(userId, true);
+            }
+
+            return NoContent();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{userId}/verify-request")]
+        public async Task<IActionResult> RequestVerifyUserAccount(Guid userId)
+        {
+            var account = await accountService.GetAccountInformation(userId);
+
+            if (account == null)
+            {
+                var exception = new Exception("Can not find account information with given id");
+
+                // Add Data to Exception
+                exception.Data.Add("error", "Account_Exception");
+                exception.Data.Add("detail", "Account_Invalid");
+                exception.Data.Add ("type", "Invalid");
+                exception.Data.Add("value", userId);
+
+                throw exception;
+            }
+
+            if ( account.IsVerified)
+            {
+                var exception = new Exception("The account is already verified");
+
+                // Add Data to Exception
+                exception.Data.Add("error", "Verification_Exception");
+                exception.Data.Add("detail", "Account_Already_Verified");
+                exception.Data.Add ("type", "Invalid");
+                exception.Data.Add("value", userId);
+
+                throw exception;
+            }
+
+            var token = await tokenService.CreateToken(account.Id, "verifyUserAccount", tokenService.CreateRandomToken(10), 1440);
+
+            string emailSubject = "Account verification";
+            
+            string emailBody = System.IO.File.ReadAllText($"{Directory.GetCurrentDirectory()}\\Utilities\\Html\\verification.html").Replace("[0]", token.TokenValue);
+
+            await emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
+
+            return NoContent();
         }
 
         [Authorize]

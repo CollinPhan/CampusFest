@@ -42,6 +42,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Username_Taken");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountInfo.Username);
             }
 
@@ -52,6 +53,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Email_Invalid");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountInfo.Email);
             }
 
@@ -62,6 +64,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Email_Taken");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountInfo.Email);
             }
 
@@ -72,6 +75,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Password_Invalid");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountInfo.Password);
             }
             
@@ -93,6 +97,7 @@ namespace Backend.API.Services.Implementation
                     // Add Data to Exception
                     exception.Data.Add("error", "Account_Exception");
                     exception.Data.Add("detail", "Account_Role_Not_Existed");
+                    exception.Data.Add("type", "Invalid");
                     exception.Data.Add("value", role);
 
                     throw exception;
@@ -117,6 +122,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Existed");
+                exception.Data.Add("type", "NotFound");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -127,7 +133,7 @@ namespace Backend.API.Services.Implementation
 
         public async Task<AccountDTO> GetAccountInformation(string username, string password)
         {
-            Expression<Func<Account, bool>> filter = x => x.Username == username && x.Password == HashPassword(password);
+            Expression<Func<Account, bool>> filter = x => (x.Username == username || x.Email == username)&& x.Password == HashPassword(password);
             Expression<Func<Account, object>> include = x => x.Roles;
             Expression<Func<Account, object>> orderBy = x => x.Username;
 
@@ -141,6 +147,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Incorrect_Credential");
+                exception.Data.Add("type", "Unauthorized");
                 exception.Data.Add("value", null);
 
                 throw exception;
@@ -152,7 +159,7 @@ namespace Backend.API.Services.Implementation
         public async Task<IEnumerable<AccountDTO>> GetAccountPaginated(int page, int page_size, string username = "", string fullname = "", string email = "", string phone = "", string sortby = "", bool IncludeDeleted = false, bool OnlyVerified = false, bool isDecending = false)
         {
             Expression<Func<Account, bool>> filterExpression = x =>
-                    x.Username.ToLower().Contains(username.ToLower())
+                    x.Username == username
                     //&& x.Fullname.ToLower().Contains(fullname.ToLower())
                     //&& x.Email.ToLower().Contains(x.Email.ToLower())
                     //&& x.Phone == phone
@@ -189,6 +196,7 @@ namespace Backend.API.Services.Implementation
                 var exception = new Exception("Username or password is incorrect");
 
                 // Add Data to Exception
+                exception.Data.Add("statusCode", 400);
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
                 exception.Data.Add("value", accountId);
@@ -218,6 +226,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", account.Id);
 
                 throw exception;
@@ -230,6 +239,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Password_Invalid");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", account.Password);
             }
 
@@ -255,6 +265,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -267,6 +278,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Update_Username_Failed_NotAvailable");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", username);
 
                 throw exception;
@@ -289,6 +301,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -302,6 +315,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Password_Invalid");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", password);
 
                 throw exception;
@@ -324,6 +338,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -337,6 +352,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Email_Invalid");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", email);
 
                 throw exception;
@@ -359,6 +375,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -380,6 +397,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Account_Exception");
                 exception.Data.Add("detail", "Account_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", accountId);
 
                 throw exception;
@@ -418,6 +436,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Role_Exception");
                 exception.Data.Add("detail", "Role_Not_Exsited");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", roleId);
 
                 throw exception;

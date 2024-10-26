@@ -256,9 +256,9 @@ namespace Backend.API.Services.Implementation
                 var exception = new Exception("Token information not found");
 
                 // Add Data to Exception
-                exception.Data.Add("statusCode", 400);
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Token_Not_Found");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", tokenId);
 
                 throw exception;
@@ -278,6 +278,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Token_Not_Found");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", tokenValue);
 
                 throw exception;
@@ -303,9 +304,9 @@ namespace Backend.API.Services.Implementation
                 var exception = new Exception();
 
                 // Add Data to Exception
-                exception.Data.Add("statusCode", 400);
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Token_Not_Existed");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", userId);
 
                 throw exception;
@@ -323,9 +324,9 @@ namespace Backend.API.Services.Implementation
                 var exception = new Exception();
 
                 // Add Data to Exception
-                exception.Data.Add("statusCode", 400);
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Token_Not_Existed");
+                exception.Data.Add("type", "Invalid");
                 exception.Data.Add("value", tokenEntry);
                 throw exception;
             }

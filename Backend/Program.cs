@@ -42,6 +42,7 @@ namespace Backend
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             // Add Database Context
             builder.Services.AddDbContext<CampusFestDbContext>(options => options.UseLazyLoadingProxies().UseSqlServer(connectionString: builder.Configuration.GetConnectionString("default")));

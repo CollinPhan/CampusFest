@@ -25,11 +25,13 @@ namespace Backend.Infrastructures.Repositories.Implementation
             return entity;
         }
 
-        public async Task CreateRange(List<T> entities)
+        public async Task<IEnumerable<T>> CreateRange(IEnumerable<T> entities)
         {
             await Set.AddRangeAsync(entities);
 
             await context.SaveChangesAsync();
+
+            return entities;
         }
 
         public async Task<IEnumerable<T>> GetAll()
@@ -43,121 +45,14 @@ namespace Backend.Infrastructures.Repositories.Implementation
 
             return target;
         }
-
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size)
+        
+        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, IEnumerable<string> includeProperty, Expression<Func<T, bool>> filter = null!, Expression<Func<T, object>> orderBy = null!, bool tracking = false, bool isDesending = false)
         {
-            return await Set.AsNoTracking().Skip((page - 1) * page_size).Take(page_size).ToListAsync();
-        }
+            // THe result set
+            IQueryable<T> result = Set.AsQueryable();
 
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderBy, bool IsAscending = false)
-        {
-            // Filter
-            var result = Set.Where(filter);
-
-            // Sort
-            if (orderBy != null)
-            {
-                if (IsAscending)
-                {
-                    result = result.OrderBy(orderBy);
-                }
-                else
-                {
-                    result = result.OrderByDescending(orderBy);
-                }
-            }
-
-            // Pagination
-            return await result.Skip((page - 1) * page_size).Take(page_size).ToListAsync();
-        }
-
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, Expression<Func<T, bool>> filter, string orderBy, bool IsAscending = false)
-        {
-            // Filter
-            var result = Set.Where(filter);
-
-            // Sort
-            if (orderBy != null)
-            {
-                if (IsAscending)
-                {
-                    result = result.OrderBy(GetOrderByExpression(orderBy));
-                }
-                else
-                {
-                    result = result.OrderByDescending(GetOrderByExpression(orderBy));
-                }
-            }
-           
-            // Pagination
-            return await result.Skip((page - 1) * page_size).Take(page_size).ToListAsync();
-        }
-
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, Expression<Func<T, object>> includeProperty, Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderBy, bool isDesending = false)
-        {
-            var result = Set.AsNoTracking().AsQueryable();
-
-            // Filter
-            if (filter != null)
-            {
-                result = result.Where(filter);
-            }
-
-            // Sort
-            if (orderBy != null)
-            {
-                result = isDesending ? result.OrderByDescending(orderBy) : result.OrderBy(orderBy);
-            }
-
-            // Pagination
-            result = result.Skip((page - 1) * page_size).Take(page_size);
-
-            // Including items
-            if (includeProperty != null)
-            {
-                result = result.Include(includeProperty);
-            }
-
-            return await result.ToListAsync();
-        }
-
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, Expression<Func<T, object>> includeProperty, Expression<Func<T, bool>> filter, string orderBy, bool isDesending = false)
-        {
-
-            var result = Set.AsNoTracking().AsQueryable();
-
-            // Filter
-            if (filter != null)
-            {
-                result = result.Where(filter);
-            }
-
-            // Sort
-            if (orderBy != null)
-            {
-                var order = GetOrderByExpression(orderBy);
-                result = isDesending ? result.OrderByDescending(order) : result.OrderBy(order);
-            }
-
-            // Pagination
-
-            result = result.Skip((page - 1) * page_size).Take(page_size);
-
-            // Including items
-            if (includeProperty != null)
-            {
-                result = result.Include(includeProperty);
-            }
-
-            return await result.ToListAsync();
-        }
-
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, Expression<Func<T, object>> includeProperty, Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderBy, bool tracking = false, bool isDesending = false)
-        {
-            var result = Set.AsQueryable();
-
-            // Tracking
-            if (tracking)
+            // Tracking (for updating and deleting purposes)
+            if (!tracking)
             {
                 result = result.AsNoTracking();
             }
@@ -168,23 +63,27 @@ namespace Backend.Infrastructures.Repositories.Implementation
                 result = result.Where(filter);
             }
 
+            // Include
+            foreach (string property in includeProperty)
+            {
+                result = result.Include(property);
+            }
+
             // Sort
             if (orderBy != null)
             {
-
-                result = isDesending ? result.OrderByDescending(orderBy) : result.OrderBy(orderBy);
+                if (isDesending)
+                {
+                    result.OrderByDescending(orderBy);
+                }
+                else
+                {
+                    result.OrderBy(orderBy);
+                }
+                
             }
 
-            // Pagination
-
-            result = result.Skip((page - 1) * page_size).Take(page_size);
-
-            // Including items
-            if (includeProperty != null)
-            {
-                result = result.Include(includeProperty);
-            }
-
+            // Return pagination result
             return await result.ToListAsync();
         }
 
@@ -197,6 +96,31 @@ namespace Backend.Infrastructures.Repositories.Implementation
             var conversion = Expression.Convert(property, typeof(object));
 
             return Expression.Lambda<Func<T, object>>(conversion, parameter);
+        }
+
+        public async Task<T?> FindFirstMatch<Tvalue>(string key, Tvalue value)
+        {
+            ParameterExpression parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.Property(parameter, key);
+            var constant = Expression.Constant(value, typeof(Tvalue));
+            BinaryExpression body = Expression.Equal(property, constant);
+            Expression<Func<T, bool>> predicate = Expression.Lambda<Func<T, bool>>(body, parameter);
+
+            var result = await Set.Where(predicate).FirstOrDefaultAsync();
+
+            return result;
+        }
+
+        public async Task<T?> FindFirstMatch(Expression<Func<T, bool>> predicate)
+        {
+            return await Set.Where(predicate).FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> IsExist<Tid>(Tid id)
+        {
+            var result = await context.Set<T>().FindAsync(id);
+
+            return result != null;
         }
 
         public Task<bool> IsExist<Tvalue>(string key, Tvalue value)
@@ -235,13 +159,6 @@ namespace Backend.Infrastructures.Repositories.Implementation
             return context.Set<T>().AnyAsync(lambda);
         }
 
-        public async Task<bool> IsExist<Tid>(Tid id)
-        {
-            var result = await context.Set<T>().FindAsync(id);
-
-            return result != null;
-        }
-
         public async Task Remove(T entity)
         {
             context.Set<T>().Remove(entity);
@@ -254,6 +171,16 @@ namespace Backend.Infrastructures.Repositories.Implementation
             context.Set<T>().Update(entity);
 
             await context.SaveChangesAsync();
+        }
+
+        public async Task<int> Count()
+        {
+            return await Set.CountAsync();
+        }
+
+        public async Task<int> Count(Expression<Func<T, bool>> predicate)
+        {
+            return await Set.Where(predicate).CountAsync(predicate);
         }
 
         public async Task SaveChangeAsync()
@@ -278,5 +205,7 @@ namespace Backend.Infrastructures.Repositories.Implementation
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        
     }
 }

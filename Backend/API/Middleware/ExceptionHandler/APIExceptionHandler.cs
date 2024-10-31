@@ -7,7 +7,7 @@ namespace Backend.API.Middleware.ExceptionHandler
 {
     public class APIExceptionHandler : IExceptionHandler
     {
-        private readonly ILogger<APIExceptionHandler> logger = null!; // Need more researching
+        //private readonly ILogger<APIExceptionHandler> logger = null!; // Need more researching
 
         Dictionary<string, object> DefaultData = new Dictionary<string, object>
         {
@@ -20,8 +20,7 @@ namespace Backend.API.Middleware.ExceptionHandler
 
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            DefaultData["detail"] = exception.ToString();
-            DefaultData["type"] = exception.GetType();
+            DefaultData["type"] = exception.GetType().Name;
 
             httpContext.Response.StatusCode = 500;
             await httpContext.Response.WriteAsJsonAsync(DefaultData, cancellationToken);

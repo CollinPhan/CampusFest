@@ -51,16 +51,10 @@ namespace Backend.Infrastructures.Repositories.Implementation
             // The result set
             IQueryable<T> result = Set.AsQueryable();
 
-            // Tracking (for updating and deleting purposes)
-            if (!tracking)
-            {
-                result = result.AsNoTracking();
-            }
-
             // Filter
             if (filter != null)
             {
-                result = result.Where(filter);
+                result = result.Where(filter).AsQueryable();
             }
 
             // Include
@@ -78,13 +72,19 @@ namespace Backend.Infrastructures.Repositories.Implementation
             {
                 if (isDesending)
                 {
-                    result.OrderByDescending(orderBy);
+                    result = result.OrderByDescending(orderBy).AsQueryable();
                 }
                 else
                 {
-                    result.OrderBy(orderBy);
+                    result = result.OrderBy(orderBy).AsQueryable();
                 }
                 
+            }
+
+            // Tracking (for updating and deleting purposes)
+            if (!tracking)
+            {
+                result = result.AsNoTracking();
             }
 
             // Return pagination result

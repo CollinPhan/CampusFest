@@ -1,5 +1,10 @@
-﻿using Backend.Cores.Entities;
+﻿using Azure;
+using Backend.Cores.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Backend.Infrastructures.Data
 {
@@ -14,19 +19,46 @@ namespace Backend.Infrastructures.Data
         public DbSet<Club> Clubs { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<EventRegistration> EventRegistrations { get; set; }
-        public DbSet<ClubEventStaff> ClubEventStaffs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Getting the configuration parameters from the configuration file.
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+
+
             modelBuilder.Entity<Role>(table =>
             {
                 table.HasData(
-                    new Role {Id = 1, Name="SystemAdmin" },
-                    new Role {Id = 2, Name="ClubEventOrganizer"},
-                    new Role {Id = 3, Name = "ClubEventStaff" },
-                    new Role {Id = 4, Name = "Visitor"}
+                    new Role { Id = 1, Name = "SystemAdmin" },
+                    new Role { Id = 2, Name = "ClubEventOrganizer" },
+                    new Role { Id = 3, Name = "ClubEventStaff" },
+                    new Role { Id = 4, Name = "Visitor" }
                 );
             });
+
+            Guid adminId = Guid.NewGuid();
+            Console.WriteLine( adminId );
+            string email = configuration.GetValue<string>("Email:Address") ?? throw new Exception("No scetion found for Email:Address");
+            modelBuilder.Entity<Account>()
+                .HasMany(a => a.Roles)
+                .WithMany(b => b.Accounts)
+                .UsingEntity<Dictionary<string, object>>("AccountRole",j => j.HasData( new {AccountsId = adminId, RolesId = 1}))
+                .HasData(
+                    new Account
+                    {
+                        Id = adminId,
+                        Username = "SystemAdmin",
+                        Password = Convert.ToHexString(Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes("Th3yS41dItC@meFr0mTh3W00d"), Encoding.UTF8.GetBytes("Th3yS41dItC@meFr0mTh3W00d"), 3000, HashAlgorithmName.SHA256, 256)),
+                        Email = $"{email}",
+                        IsVerified = true,
+                        ClubId = null,
+                        Fullname = "Collin"
+                    }
+                );
 
             modelBuilder.Entity<Campus>(table =>
             {

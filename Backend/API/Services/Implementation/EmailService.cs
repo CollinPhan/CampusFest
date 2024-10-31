@@ -31,8 +31,8 @@ namespace Backend.API.Services.Interface
             MailMessage mail = new MailMessage();
 
             // Setup email configuration
-            mail.From = new MailAddress(this.address);
-            mail.To.Add(new MailAddress(address, "EventP Manager"));
+            mail.From = new MailAddress(this.address, "EventP MailSystem");
+            mail.To.Add(new MailAddress(address));
             mail.SubjectEncoding = Encoding.UTF8;
             mail.BodyEncoding = Encoding.UTF8;
             mail.IsBodyHtml = true;

@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.Commons;
 using Backend.Cores.Entities;
+using Backend.Cores.Exceptions;
 using Backend.Infrastructures.Data.DTO;
 using Backend.Infrastructures.Repositories.Interface;
+using Backend.Utilities.Helpers;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -18,12 +21,21 @@ namespace Backend.API.Services.Implementation
 {
     public class TokenService : ITokenService
     {
-        private readonly ITokenRepository tokenRepo;
+        private readonly IBaseRepository<Token> tokenRepo;
         private readonly IMapper mapper;
         private readonly IConfiguration configuration;
         private bool disposedValue;
 
-        public TokenService(ITokenRepository tokenRepository, IMapper mapper, IConfiguration configuration)
+        Dictionary<string, object> ExceptionData = new Dictionary<string, object>
+        {
+            { "error",  "Token_Exception"},
+            { "detail", "Unknown_Exception"},
+            { "type", "Unknown"},
+            { "value", null!},
+        };
+
+
+        public TokenService(IBaseRepository<Token> tokenRepository, IMapper mapper, IConfiguration configuration)
         {
             this.tokenRepo = tokenRepository;
             this.mapper = mapper;
@@ -34,6 +46,12 @@ namespace Backend.API.Services.Implementation
         {
             return CreateJwtToken(data, duration);
         }
+
+        public string CreateRefreshToken(Dictionary<string, string> data, int duration = 10)
+        {
+            return CreateBase64Token(data, duration);
+        }
+
 
         public string CreateBase64Token(Dictionary<string, string> data, int duration = 5)
         {
@@ -66,22 +84,6 @@ namespace Backend.API.Services.Implementation
             return $"{Convert.ToBase64String(Encoding.UTF8.GetBytes(headerSection))}.{Convert.ToBase64String(Encoding.UTF8.GetBytes(bodySection))}.{Convert.ToBase64String(byteSignature)}";
         }
 
-        public string CreateRandomToken(int length = 10)
-        {
-            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!=_-@#$%";
-            var stringChars = new char[8];
-            var random = new Random();
-
-            for (int i = 0; i < stringChars.Length; i++)
-            {
-                stringChars[i] = chars[random.Next(chars.Length)];
-            }
-
-            var finalString = new string(stringChars);
-
-            return finalString;
-        }
-
         public string CreateJwtToken(Dictionary<string, string>data, int duration = 5)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
@@ -99,34 +101,20 @@ namespace Backend.API.Services.Implementation
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public string CreateRefreshToken(Dictionary<string, string> data, int duration = 10)
+        public string CreateRandomToken(int length = 10)
         {
-            return CreateBase64Token(data, duration);
-        }
+            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!=_-@#$%";
+            var stringChars = new char[8];
+            var random = new Random();
 
-        public async Task<TokenDTO> CreateToken(Guid userId, string reason, string? tokenValue, int duration)
-        {
-            Token token = new Token
+            for (int i = 0; i < stringChars.Length; i++)
             {
-                ValidAccount = userId,
-                Value = tokenValue!,
-                Reason = reason,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(duration)
-            };
-
-            // Data appending in case token value was not passed
-            if (tokenValue == null)
-            {
-                var tokenData = new Dictionary<string, string>
-                {
-                    { "user", userId.ToString() },
-                    { "reason", reason },
-                };
-
-                token.Value = CreateRandomToken(12);
+                stringChars[i] = chars[random.Next(chars.Length)];
             }
-            
-            return mapper.Map<Token, TokenDTO>(await tokenRepo.Create(token));
+
+            var finalString = new string(stringChars);
+
+            return finalString;
         }
 
         public Dictionary<string, string> DecodeBase64Token(string token)
@@ -151,9 +139,9 @@ namespace Backend.API.Services.Implementation
 
             // token signature validation
             string header = Encoding.UTF8.GetString(Convert.FromBase64String(tokenParts[0]));
-            header = header.Remove(header.Length-1,1).Remove(0,1); // Remove parenthesis.
+            header = header.Remove(header.Length - 1, 1).Remove(0, 1); // Remove parenthesis.
 
-            Dictionary<string, string> headerData = new Dictionary<string,string>();
+            Dictionary<string, string> headerData = new Dictionary<string, string>();
 
             foreach (string item in header.Split(","))
             {
@@ -170,7 +158,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Refresh_Token_Invalid");
-                exception.Data.Add ("type", "Unauthorized");
+                exception.Data.Add("type", "Unauthorized");
                 exception.Data.Add("value", token);
 
                 throw exception;
@@ -183,7 +171,7 @@ namespace Backend.API.Services.Implementation
                 // Add Data to Exception
                 exception.Data.Add("error", "Token_Exception");
                 exception.Data.Add("detail", "Refresh_Token_Expired");
-                exception.Data.Add ("type", "Unauthorized");
+                exception.Data.Add("type", "Unauthorized");
                 exception.Data.Add("value", token);
 
                 throw exception;
@@ -191,8 +179,8 @@ namespace Backend.API.Services.Implementation
 
             // Actual decoding for data part
             string body = Encoding.UTF8.GetString(Convert.FromBase64String(tokenParts[1]));
-            
-            body = body.Remove(body.Length-1,1).Remove(0,1); // Remove parenthesis.
+
+            body = body.Remove(body.Length - 1, 1).Remove(0, 1); // Remove parenthesis.
 
             Dictionary<string, string> bodyData = new Dictionary<string, string>();
 
@@ -247,6 +235,32 @@ namespace Backend.API.Services.Implementation
             return data;
         }
 
+
+        public async Task<TokenDTO> CreateToken(Guid userId, string reason, string? tokenValue, int duration)
+        {
+            Token token = new Token
+            {
+                ValidAccount = userId,
+                Value = tokenValue!,
+                Reason = reason,
+                ExpirationDate = DateTime.UtcNow.AddMinutes(duration)
+            };
+
+            // Data appending in case token value was not passed
+            if (tokenValue == null)
+            {
+                var tokenData = new Dictionary<string, string>
+                {
+                    { "user", userId.ToString() },
+                    { "reason", reason },
+                };
+
+                token.Value = CreateRandomToken(12);
+            }
+            
+            return mapper.Map<Token, TokenDTO>(await tokenRepo.Create(token));
+        }
+
         public async Task DeleteToken(Guid tokenId)
         {
             var target = await tokenRepo.GetById(tokenId);
@@ -269,7 +283,7 @@ namespace Backend.API.Services.Implementation
 
         public async Task DeleteToken(string tokenValue)
         {
-            var target = (await tokenRepo.GetPaginated(1, 1, x => x.Value == tokenValue, "Value")).FirstOrDefault();
+            var target = (await tokenRepo.GetPaginated(1, 1, null!, x => x.Value == tokenValue, x => x.Value)).FirstOrDefault();
 
             if (target == null)
             {
@@ -297,22 +311,20 @@ namespace Backend.API.Services.Implementation
             Expression<Func<Token, bool>> filterExpression = x => x.ValidAccount == userId && x.Reason == reason;
             Expression<Func<Token, object>> sortExpression = x => x.ExpirationDate;
 
-            var tokenEntry = (await tokenRepo.GetPaginated(1, 1, filterExpression, sortExpression)).FirstOrDefault();
+            var tokenEntry = (await tokenRepo.GetPaginated(1, 1, null!, filterExpression, sortExpression)).FirstOrDefault();
 
             if (tokenEntry == null)
             {
-                var exception = new Exception();
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Token_Exception");
-                exception.Data.Add("detail", "Token_Not_Existed");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", userId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Account data is not found",
+                    error: "Account_Exception",
+                    type: "Invalid",
+                    summary: "The account data is not found",
+                    detail: "The account information ",
+                    value: userId);
             }
 
-            return mapper.Map<Token,TokenDTO>(tokenEntry);
+            return mapper.Map<Token,TokenDTO>(tokenEntry!);
         }
         
         public async Task<TokenDTO> GetToken(Guid tokenEntry)
@@ -334,12 +346,30 @@ namespace Backend.API.Services.Implementation
             return mapper.Map<Token,TokenDTO>(result);
         }
 
+        public async Task<Guid> GetValidUserForToken(string tokenValue)
+        {
+            var token = await tokenRepo.FindFirstMatch("value", tokenValue);
+
+            if (token == null)
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Token is not found",
+                    error: "Token_Exception",
+                    type: "Invalid",
+                    summary: "The token value could not be found.",
+                    detail: "This is likely because the given is wrong or the token is deleted.",
+                    value: tokenValue);
+            }
+
+            return token!.ValidAccount;
+        }
+
         public async Task<bool> VerifyToken(Guid userId, string tokenValue, string reason)
         {
             Expression<Func<Token, bool>> filterExpression = x => x.ValidAccount == userId && x.Reason == reason && x.Value == tokenValue;
             Expression<Func<Token, object>> sortExpression = x => x.ExpirationDate;
 
-            var tokenEntry = (await tokenRepo.GetPaginated(1, 1, filterExpression, sortExpression)).FirstOrDefault();
+            var tokenEntry = (await tokenRepo.GetPaginated(1, 1, null!, filterExpression, sortExpression)).FirstOrDefault();
 
             if (tokenEntry == null)
             {
@@ -368,6 +398,38 @@ namespace Backend.API.Services.Implementation
             }
 
             return true;
+        }
+
+        public async Task<Guid> VerifyToken(string tokenValue, string reason)
+        {
+            Expression<Func<Token, bool>> filterExpression = x => x.Reason == reason && x.Value == tokenValue;
+            Expression<Func<Token, object>> sortExpression = x => x.ExpirationDate;
+
+            var tokenEntry = (await tokenRepo.GetPaginated(1, 1, null!, filterExpression, sortExpression)).FirstOrDefault();
+
+            if (tokenEntry == null)
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Token is not found",
+                    error: "Token_Exception",
+                    type: "Invalid",
+                    summary: "The token value could not be found.",
+                    detail: "This is likely because the given is wrong or the token is deleted.",
+                    value: tokenValue);
+            }
+
+            if (tokenEntry!.ExpirationDate < DateTime.UtcNow)
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Token is not found",
+                    error: "Token_Exception",
+                    type: "Invalid",
+                    summary: "The token is expired.",
+                    detail: $"The token is expired at {tokenEntry!.ExpirationDate}",
+                    value: tokenValue);
+            }
+
+            return tokenEntry.ValidAccount;
         }
 
         public bool IsValidBase64Token(string token)

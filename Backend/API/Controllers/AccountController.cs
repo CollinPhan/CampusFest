@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.API.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/account")]
     [ApiController]
     public class AccountController : ControllerBase
@@ -31,7 +31,8 @@ namespace Backend.API.Controllers
         [HttpGet("list")]
         public async Task<ActionResult<IEnumerable<AccountPublicViewModel>>> GetAllAccountPublicInformation(int page = 1, int page_size = 10, string keyword = "", string sortBy = "Username", bool onlyVerified = false, bool includeDeleted = false)
         {
-            return Ok(await accountService.GetAccountPaginated(page: page, page_size: page_size, username: keyword, sortby: sortBy, IncludeDeleted: includeDeleted, OnlyVerified: onlyVerified));
+            var result = mapper.Map<IEnumerable<AccountDTO>, IEnumerable<AccountPublicViewModel>>(await accountService.GetAccountPaginated(page: page, page_size: page_size, username: keyword, sortby: sortBy, IncludeDeleted: includeDeleted, OnlyVerified: onlyVerified));
+            return Ok(result);
         }
 
         [Authorize]
@@ -47,6 +48,7 @@ namespace Backend.API.Controllers
             return Ok(await accountService.GetAccountInformation(Guid.Parse(data["user"])));
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<ActionResult<AccountPublicViewModel>> GetAccountPublicInformation(Guid id)
         {
@@ -58,6 +60,8 @@ namespace Backend.API.Controllers
         public async Task<IActionResult> CreateNewUser([FromBody] AccountCreationModel accountInfo)
         {
             var account = mapper.Map<AccountCreationModel, AccountDTO>(accountInfo);
+
+            account.Roles = new List<string>() { "Visitor" };
 
             await accountService.AddAccount(account);
             
@@ -74,13 +78,11 @@ namespace Backend.API.Controllers
 
         [AllowAnonymous]
         [HttpGet("verify")]
-        public async Task<IActionResult> VerifyUserAccount([FromQuery] Guid userId, [FromQuery] string token)
+        public async Task<IActionResult> VerifyUserAccount([FromQuery] string token)
         {
-            if (await tokenService.VerifyToken(userId, token, "verifyUserAccount"))
-            {
-                await accountService.UpdateVerificationStatus(userId, true);
-            }
-
+            Guid userId = await tokenService.VerifyToken(token, "verifyUserAccount");   
+            await tokenService.DeleteToken(token);
+            await accountService.UpdateVerificationStatus(userId, true);
             return NoContent();
         }
 

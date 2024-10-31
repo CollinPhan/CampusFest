@@ -37,7 +37,8 @@ namespace Backend.Cores.Commons
                .ForMember(destination => destination.IsVerified, action => action.MapFrom(source => source.IsVerified))
                .ForMember(destination => destination.IsDeleted, action => action.MapFrom(source => source.IsDeleted))
                .ForMember(destination => destination.CreatedTime, action => action.MapFrom(source => source.CreatedTime));
-
+               //.ForMember(destination => destination.Roles, action => action.Ignore());
+    
             CreateMap<AccountDTO, AccountCreationModel>()
                 .ForMember(destination => destination.Username, action => action.MapFrom(source => source.Username))
                 .ForMember(destination => destination.Email, action => action.MapFrom(source => source.Email))
@@ -59,6 +60,7 @@ namespace Backend.Cores.Commons
                 .ForMember(destination => destination.Fullname, action => action.MapFrom(source => source.Fullname))
                 .ForMember(destination => destination.Phone, action => action.MapFrom(source => source.Phone))
                 .ForMember(destination => destination.Roles, action => action.MapFrom(source => source.Roles))
+                .ForMember(destination => destination.CreatedDate, action => action.MapFrom(source => source.CreatedTime))
                 .ReverseMap();
 
             // Role related

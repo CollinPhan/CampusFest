@@ -10,11 +10,11 @@ namespace Backend.API.Services.Implementation
 {
     public class RoleService : IRoleService
     {
-        private readonly IRoleRepository roleRepo;
+        private readonly IBaseRepository<Role> roleRepo;
         private readonly IMapper mapper;
         private bool disposedValue;
 
-        public RoleService(IRoleRepository roleRepo, IMapper mapper)
+        public RoleService(IBaseRepository<Role> roleRepo, IMapper mapper)
         {
             this.roleRepo = roleRepo;
             this.mapper = mapper;
@@ -101,9 +101,8 @@ namespace Backend.API.Services.Implementation
         public async Task<RoleDTO> GetRoleInformation(string roleName)
         {
             Expression<Func<Role, bool>> filter = x => x.Name == roleName;
-            string include = null!;
 
-            var entity = (await roleRepo.GetPaginated(1, 1, filter, include)).FirstOrDefault();
+            var entity = (await roleRepo.GetPaginated(1, 1, null, filter)).FirstOrDefault();
 
             if (entity == null)
             {

@@ -15,7 +15,12 @@ namespace Backend.API.Services.Interface
 
         Task<bool> VerifyToken(Guid userId, string tokenValue, string reason);
 
+        Task<Guid> VerifyToken(string tokenValue, string reason);
+
+
         Task<TokenDTO> GetLatestToken(Guid userId, string reason);
+
+        Task<Guid> GetValidUserForToken(string tokenValue);
 
         string CreateAccessToken(Dictionary<string, string> data, int duration);
 

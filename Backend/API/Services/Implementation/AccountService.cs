@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Backend.API.Services.Interface;
 using Backend.Cores.Entities;
+using Backend.Cores.Exceptions;
 using Backend.Cores.ViewModels;
 using Backend.Infrastructures.Data.DTO;
 using Backend.Infrastructures.Repositories.Interface;
@@ -17,12 +18,12 @@ namespace Backend.API.Services.Implementation
 {
     public class AccountService: IAccountService
     {
-        private readonly IAccountRepository accountRepo;
-        private readonly IRoleRepository roleRepo;
+        private readonly IBaseRepository<Account> accountRepo;
+        private readonly IBaseRepository<Role> roleRepo;
         private readonly IMapper mapper;
         private bool disposedValue;
 
-        public AccountService(IAccountRepository accountRepo, IRoleRepository roleRepository, IMapper mapper)
+        public AccountService(IBaseRepository<Account> accountRepo, IBaseRepository<Role> roleRepository, IMapper mapper)
         {
             this.accountRepo = accountRepo;
             this.roleRepo = roleRepository;
@@ -31,83 +32,85 @@ namespace Backend.API.Services.Implementation
 
         public async Task AddAccount(AccountDTO accountInfo)
         {
-            Exception exception = null!;
-
             // Data validation for account creation
 
+            // Check for existing username inside the database.
             if (await accountRepo.IsExist("Username", accountInfo.Username))
             {
-                exception = new Exception("Username has been taken");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Username_Taken");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountInfo.Username);
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Username has been taken",
+                    error: "Account_Creation_Exception",
+                    type: "Invalid",
+                    summary: "Username has been taken",
+                    detail: "There is another account has been created with this username, please try another one.",
+                    value: accountInfo.Username);
             }
 
-            if (ValidationHelper.ValidateString(accountInfo.Email, @"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"))
+            // Checking for any existing active account with the same email address.
+            if (await accountRepo.FindFirstMatch(x => x.Email == accountInfo.Email && !x.IsDeleted) != null)
             {
-                exception = new Exception("Email address is invalid");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Email_Invalid");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountInfo.Email);
-            }
-
-            if (await accountRepo.IsExist("Email", accountInfo.Email))
-            {
-                exception = new Exception("Email has been used to create account");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Email_Taken");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountInfo.Email);
-            }
-
-            if (!ValidationHelper.ValidateString(accountInfo.Password, "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"))
-            {
-                exception = new Exception("Pasword requires minimum eight characters, at least one letter and one number");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Password_Invalid");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountInfo.Password);
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Email address is invalid",
+                    error: "Account_Creation_Exception",
+                    type: "Invalid",
+                    summary: "Email address is invalid",
+                    detail: "The email address has already been taken.",
+                    value: accountInfo.Email);
             }
             
-            if (exception != null)
+            // Checking for a valid email address.
+            if (ValidationHelper.ValidateString(accountInfo.Email, @"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"))
             {
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Email address is invalid", 
+                    error:"Account_Creation_Exception", 
+                    type: "Invalid",
+                    summary:"Email address is invalid",
+                    detail:"The email address does not valid. Please retry with another email (Ex: exapmle@gmail.com)",
+                    value: accountInfo.Email);
             }
 
-            var entity = mapper.Map<AccountDTO, Account>(accountInfo);
+            // Checking for a valid password.
+            if (!ValidationHelper.ValidateString(accountInfo.Password, @"^(?=.*[A-Za-z])(?=.*\d)[\d\w!@#$%^&*_]{8,30}$"))
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Password is invalid",
+                    error: "Account_Creation_Exception",
+                    type: "Invalid",
+                    summary: "Password is invalid",
+                    detail: @"The password should at least 8 character in length, you might use special characters such as '!@#$%^&*_' while creating password.",
+                    value: accountInfo.Password);
+            }
+            
+            var entity = mapper.Map<Account>(accountInfo);
 
+            // Checking for valid role.
             foreach (string role in accountInfo.Roles)
             {
-                var roleEntity = (await roleRepo.GetPaginated(1, 1, x => x.Name == role, (string) null!)).FirstOrDefault();
+                var roleEntity = (await roleRepo.FindFirstMatch(x => x.Name == role));
 
                 if (roleEntity == null)
                 {
-                    exception = new Exception("Email has been used to create account");
+                    ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                       message: "User role is invalid",
+                       error: "Account_Creation_Exception",
+                       type: "Invalid",
+                       summary: "Role data not found",
+                       detail: @"There is no role data found for the provided role name",
+                       value: role);
 
-                    // Add Data to Exception
-                    exception.Data.Add("error", "Account_Exception");
-                    exception.Data.Add("detail", "Account_Role_Not_Existed");
-                    exception.Data.Add("type", "Invalid");
-                    exception.Data.Add("value", role);
-
-                    throw exception;
+                    return;
                 }
 
                 entity.Roles.Add(roleEntity);
             }
+
+            Console.WriteLine(entity.Roles.Count);
             
+            // Create a hashed password.
             entity.Password = HashPassword(entity.Password); //  Create pasword hash using SHA256 hashing alogrithm
 
+            // Add new Account entity into the database.
             await this.accountRepo.Create(entity);
         }
 
@@ -133,24 +136,21 @@ namespace Backend.API.Services.Implementation
 
         public async Task<AccountDTO> GetAccountInformation(string username, string password)
         {
-            Expression<Func<Account, bool>> filter = x => (x.Username == username || x.Email == username)&& x.Password == HashPassword(password);
-            Expression<Func<Account, object>> include = x => x.Roles;
-            Expression<Func<Account, object>> orderBy = x => x.Username;
+            Expression<Func<Account, bool>> predicate = x => (x.Username == username || x.Email == username)&& x.Password == HashPassword(password);
 
-            var entity = (await accountRepo.GetPaginated(1, 1, include, filter, orderBy, false))
-                .FirstOrDefault();
+            var entity = await accountRepo.FindFirstMatch(predicate);
 
             if (entity == null)
             {
-                var exception = new Exception("Username or password is incorrect");
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Username or password is invalid",
+                   error: "Account_Login_Exception",
+                   type: "Invalid",
+                   summary: "Wrong username or password",
+                   detail: "Wrong username or password",
+                   value: username);
 
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Incorrect_Credential");
-                exception.Data.Add("type", "Unauthorized");
-                exception.Data.Add("value", null);
-
-                throw exception;
+                return null!;
             }
 
             return mapper.Map<Account, AccountDTO>(entity);
@@ -159,14 +159,14 @@ namespace Backend.API.Services.Implementation
         public async Task<IEnumerable<AccountDTO>> GetAccountPaginated(int page, int page_size, string username = "", string fullname = "", string email = "", string phone = "", string sortby = "", bool IncludeDeleted = false, bool OnlyVerified = false, bool isDecending = false)
         {
             Expression<Func<Account, bool>> filterExpression = x =>
-                    x.Username == username
+                    x.Username.Contains(username)
                     //&& x.Fullname.ToLower().Contains(fullname.ToLower())
                     //&& x.Email.ToLower().Contains(x.Email.ToLower())
                     //&& x.Phone == phone
-                    && IncludeDeleted ? true : x.IsDeleted == false
-                    && OnlyVerified ? x.IsVerified == true : true;
+                    && (IncludeDeleted ? true : x.IsDeleted == false)
+                    && (OnlyVerified ? x.IsVerified == true : true);
 
-            Expression<Func<Account, object>> includeExpression = x => x.Roles;
+            IEnumerable<string> includeProperty = new List<string> { "Roles" };
 
             Expression<Func<Account, object>> sortByExpression = null!;
 
@@ -182,7 +182,13 @@ namespace Backend.API.Services.Implementation
                     break;
             }    
 
-            var result = await accountRepo.GetPaginated(page, page_size, includeExpression, filterExpression, sortByExpression, isDecending);
+            var result = await accountRepo.GetPaginated(page, page_size, includeProperty, filterExpression, sortByExpression, false, isDecending);
+
+            Console.WriteLine(username);
+            foreach (var s in result)
+            {
+                Console.WriteLine(s.Username.Contains(username));
+            }
 
             return mapper.Map<IEnumerable<Account>, IEnumerable<AccountDTO>>(result);
         }
@@ -193,15 +199,15 @@ namespace Backend.API.Services.Implementation
 
             if (target == null)
             {
-                var exception = new Exception("Username or password is incorrect");
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Deletion_Exception",
+                   type: "Invalid",
+                   summary: "User id is not valid",
+                   detail: @"There is no account with provided id exist",
+                   value: accountId);
 
-                // Add Data to Exception
-                exception.Data.Add("statusCode", 400);
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                return;
             }
 
             target.IsDeleted = true;
@@ -209,46 +215,50 @@ namespace Backend.API.Services.Implementation
             await accountRepo.Update(target);
         }
 
-        // TODO: Fix updating account information
         public async Task UpdateAccount(AccountDTO account)
         {
             var target = await accountRepo.GetById(account.Id);
 
-            
-            Exception exception = null!;
-
             // Data validation for account update
-
             if (target == null)
             {
-                exception = new Exception("Username or password is incorrect");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", account.Id);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: account.Id);
+                return;
             }
 
-            if (!ValidationHelper.ValidateString(account.Password, "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"))
+            if (target.IsDeleted)
             {
-                exception = new Exception("Pasword requires minimum eight characters, at least one letter and one number");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Password_Invalid");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", account.Password);
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account state is invalid",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Can not update a deleted account",
+                   detail: @"This account is marked as deleted. No futher update operations can be used on this account.",
+                   value: account.Id);
+                return;
             }
 
-            if (exception != null)
+            if (!ValidationHelper.ValidateString(account.Password, @"^(?=.*[A-Za-z])(?=.*\d)[\d\w!@#$%^&*_]{8,30}$"))
             {
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Password is invalid",
+                    error: "Account_Update_Exception",
+                    type: "Invalid",
+                    summary: "New password is invalid",
+                    detail: @"The password length should be between 8 character in length, you might use special characters such as '!@#$%^&*_' while creating password.",
+                    value: account.Password);
             }
 
             target.Fullname = account.Fullname;
+            target.Email = account.Email;
+            target.LastUpdatedTime = DateTime.UtcNow;
+            target.Phone = account.Phone;
             target.Password = HashPassword(account.Password);
 
             await accountRepo.Update(target);
@@ -260,28 +270,26 @@ namespace Backend.API.Services.Implementation
 
             if (target == null)
             {
-                var exception = new Exception("Account information not found");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: accountId);
+                return;
             }
 
             if (await accountRepo.IsExistForUpdate(accountId, "Username", username))
             {
-                var exception = new Exception("Username is not available");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Update_Username_Failed_NotAvailable");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", username);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Username is already taken",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Username is not available",
+                   detail: @"Already exists an account with the same username.",
+                   value: accountId);
+                return;
             }
 
             target.Username = username;
@@ -292,33 +300,29 @@ namespace Backend.API.Services.Implementation
         public async Task UpdatePassword(Guid accountId, string password)
         {
             var target = await accountRepo.GetById(accountId);
-            Exception exception = null!;
             
             if (target == null)
             {
-                exception = new Exception("Username or password is incorrect");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: accountId);
+                return;
             }
 
             // Data validation for account property update
-            if (!ValidationHelper.ValidateString(password, "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"))
+            if (!ValidationHelper.ValidateString(target.Password, @"^(?=.*[A-Za-z])(?=.*\d)[\d\w!@#$%^&*_]{8,30}$"))
             {
-                exception = new Exception("Pasword requires minimum eight characters, at least one letter and one number");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Password_Invalid");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", password);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "Password is invalid",
+                    error: "Account_Update_Exception",
+                    type: "Invalid",
+                    summary: "New password is invalid",
+                    detail: @"The password length should be between 8 character in length, you might use special characters such as '!@#$%^&*_' while creating password.",
+                    value: password);
             }
 
             target.Password = HashPassword(password);
@@ -329,33 +333,43 @@ namespace Backend.API.Services.Implementation
         public async Task UpdateEmail(Guid accountId, string email)
         {
             var target = await accountRepo.GetById(accountId);
-            Exception exception = null!;
 
             if (target == null)
             {
-                exception = new Exception("Account information not found");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: accountId);
+                return;
             }
 
             // Data validation for account property update
-            if (!ValidationHelper.ValidateString(email, "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"))
+            if (accountRepo.FindFirstMatch(x => x.Id != accountId && x.Email.ToLower() == email.ToLower() && !x.IsDeleted) != null)
             {
-                exception = new Exception("Email address is invalid");
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                                  message: "Email hase been taken by another account",
+                                  error: "Account_Update_Exception",
+                                  type: "Invalid",
+                                  summary: "The email address is not available to create account.",
+                                  detail: @"The given email address has been used to create an existing account in the system.",
+                                  value: email);
+                return;
+            }
 
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Email_Invalid");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", email);
-
-                throw exception;
+            // Data validation for account property update
+            if (!ValidationHelper.ValidateString(email, @"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"))
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                  message: "Email is not valid",
+                  error: "Account_Update_Exception",
+                  type: "Invalid",
+                  summary: "The email is invalid.",
+                  detail: @"Please check for any type in your email.",
+                  value: email);
+                return;
             }
 
             target.Email = email;
@@ -366,19 +380,17 @@ namespace Backend.API.Services.Implementation
         public async Task UpdateFullname(Guid accountId, string fullname)
         {
             var target = await accountRepo.GetById(accountId);
-            Exception exception = null!;
 
             if (target == null)
             {
-                exception = new Exception("Account information not found");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: accountId);
+                return;
             }
 
             target.Fullname = fullname;
@@ -392,15 +404,14 @@ namespace Backend.API.Services.Implementation
 
             if (target == null)
             {
-                var exception = new Exception("Username or password is incorrect");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Account does not exist",
+                   error: "Account_Update_Exception",
+                   type: "Invalid",
+                   summary: "Account does not exist.",
+                   detail: @"There is no account exist for the provided accountId.",
+                   value: accountId);
+                return;
             }
 
             target.IsVerified = verifyStatus;
@@ -425,6 +436,7 @@ namespace Backend.API.Services.Implementation
             byte[] x = Encoding.UTF8.GetBytes(password);
             return HashPassword(password, x);
         }
+
         public async Task<RoleDTO> GetRole(int roleId)
         {
             var result = await roleRepo.GetById(roleId);

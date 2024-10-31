@@ -1,8 +1,10 @@
 
+using Backend.API.Filters;
 using Backend.API.Middleware.ExceptionHandler;
 using Backend.API.Services.Implementation;
 using Backend.API.Services.Interface;
 using Backend.Cores.Commons;
+using Backend.Cores.Exceptions;
 using Backend.Infrastructures.Data;
 using Backend.Infrastructures.Repositories.Implementation;
 using Backend.Infrastructures.Repositories.Interface;
@@ -27,6 +29,7 @@ namespace Backend
                     policy => policy.AllowAnyOrigin().AllowAnyMethod()
                 )
             );
+
             // Add Exception Handler
             builder.Services.AddExceptionHandler<APIExceptionHandler>();
 
@@ -34,9 +37,7 @@ namespace Backend
             builder.Services.AddAutoMapper(typeof(EntityMapper));
 
             // Add Repositories
-            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-            builder.Services.AddScoped<ITokenRepository, TokenRepository>();
+            builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepositoy<>));
 
             // Add Services
             builder.Services.AddScoped<IAccountService, AccountService>();
@@ -67,7 +68,10 @@ namespace Backend
                 };
             });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(config =>
+            {
+                config.Filters.Add<ActionExceptionFilter>();
+            });
 
             // Configuring Services
             builder.Services.Configure<ApiBehaviorOptions>(options =>

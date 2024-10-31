@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Backend.Cores.Entities
 {
@@ -16,6 +17,8 @@ namespace Backend.Cores.Entities
         [Required(AllowEmptyStrings = false, ErrorMessage = "Account Email Is Required")]
         public string Email { get; set; } = string.Empty;
 
+        public string Avatar { get; set; } = string.Empty;
+
         public string Phone { get; set; } = string.Empty;
 
         public string Fullname { get; set; } = string.Empty;
@@ -28,6 +31,10 @@ namespace Backend.Cores.Entities
 
         public DateTime LastUpdatedTime { get; set; } = DateTime.UtcNow;
 
-        public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+        public virtual IList<Role> Roles { get; set; } = new List<Role>();
+
+        public virtual ClubEventStaff ClubStaff { get; set; } = null!;
+
+        public virtual IEnumerable<Event> EventStaff { get; set; } = Enumerable.Empty<Event>();
     }
 }

@@ -48,7 +48,7 @@ namespace Backend.Infrastructures.Repositories.Interface
         /// <param name="tracking">Should the return list of entity be tracked</param>
         /// <param name="isDesending">Should the list be in descending order when sorted ?</param>
         /// <returns><seealso cref="IEnumerable{T}"/></returns>
-        Task<IEnumerable<T>> GetPaginated(int page, int page_size, IEnumerable<string> includeProperty, Expression<Func<T, bool>> filter, Expression<Func<T, object>> orderBy, bool tracking = false, bool isDesending = false);
+        Task<IEnumerable<T>> GetPaginated(int page, int page_size, IEnumerable<string>? includeProperty = null, Expression<Func<T, bool>>? filter = null, Expression<Func<T, object>>? orderBy = null, bool tracking = false, bool isDesending = false);
 
         /// <summary>
         /// Add a new entity record and save all changes.

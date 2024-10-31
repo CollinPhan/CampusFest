@@ -37,7 +37,7 @@ namespace Backend.Infrastructures.Migrations
 
                     b.HasIndex("RolesId");
 
-                    b.ToTable("AccountRole");
+                    b.ToTable("AccountRole", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Cores.Entities.Account", b =>
@@ -80,7 +80,7 @@ namespace Backend.Infrastructures.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Accounts");
+                    b.ToTable("Accounts", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Cores.Entities.Role", b =>
@@ -101,7 +101,7 @@ namespace Backend.Infrastructures.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Role");
+                    b.ToTable("Role", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Cores.Entities.Token", b =>
@@ -131,7 +131,7 @@ namespace Backend.Infrastructures.Migrations
 
                     b.HasIndex("ValidAccount");
 
-                    b.ToTable("Tokens");
+                    b.ToTable("Tokens", (string)null);
                 });
 
             modelBuilder.Entity("AccountRole", b =>

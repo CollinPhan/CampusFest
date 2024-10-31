@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace Backend.Infrastructures.Repositories.Implementation
 {
-    public abstract class BaseRepositoy<T> : IBaseRepository<T> where T : class
+    public class BaseRepositoy<T> : IBaseRepository<T> where T : class
     {
         protected readonly CampusFestDbContext context;
         protected DbSet<T> Set => context.Set<T>();
@@ -46,9 +46,9 @@ namespace Backend.Infrastructures.Repositories.Implementation
             return target;
         }
         
-        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, IEnumerable<string> includeProperty, Expression<Func<T, bool>> filter = null!, Expression<Func<T, object>> orderBy = null!, bool tracking = false, bool isDesending = false)
+        public async Task<IEnumerable<T>> GetPaginated(int page, int page_size, IEnumerable<string>? includeProperty, Expression<Func<T, bool>>? filter = null, Expression<Func<T, object>>? orderBy = null, bool tracking = false, bool isDesending = false)
         {
-            // THe result set
+            // The result set
             IQueryable<T> result = Set.AsQueryable();
 
             // Tracking (for updating and deleting purposes)
@@ -64,10 +64,14 @@ namespace Backend.Infrastructures.Repositories.Implementation
             }
 
             // Include
-            foreach (string property in includeProperty)
+            if (includeProperty != null)
             {
-                result = result.Include(property);
+                foreach (string property in includeProperty)
+                {
+                    result = result.Include(property);
+                }
             }
+            
 
             // Sort
             if (orderBy != null)

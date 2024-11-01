@@ -6,7 +6,7 @@
         public string Fullname { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
-        public IEnumerable<string> Roles { get; set; } = new List<string>();
+        public string Roles { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
 
     }

@@ -1,4 +1,4 @@
-﻿namespace Backend.Infrastructures.Data.DTO
+﻿namespace Backend.Cores.DTO
 {
     public class AccountDTO
     {
@@ -8,11 +8,15 @@
 
         public string Password { get; set; } = string.Empty;
 
-        public string Fullname {  get; set; } = string.Empty;
+        public string Fullname { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
 
-        public string Phone {  get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+
+        public int? Campus { get; set; } = null;
+
+        public Guid? Club { get; set; } = null;
 
         public bool IsVerified { get; set; } = false;
 
@@ -22,6 +26,6 @@
 
         public DateTime LastUpdated { get; set; }
 
-        public IEnumerable<string> Roles { get; set; } = new List<string>();
+        public string Role { get; set; } = string.Empty;
     }
 }

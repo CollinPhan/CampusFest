@@ -1,6 +1,6 @@
 ﻿namespace Backend.Cores.ViewModels
 {
-    public class AccountAuthorizationViewModel
+    public class AccountAuthorizationModel
     {
         public string Username { get; set; } = string.Empty;
 

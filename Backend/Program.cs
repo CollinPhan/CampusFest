@@ -1,4 +1,5 @@
 
+using Backend.API;
 using Backend.API.Filters;
 using Backend.API.Middleware.ExceptionHandler;
 using Backend.API.Services.Implementation;
@@ -40,10 +41,7 @@ namespace Backend
             builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepositoy<>));
 
             // Add Services
-            builder.Services.AddScoped<IAccountService, AccountService>();
-            builder.Services.AddScoped<IRoleService, RoleService>();
-            builder.Services.AddScoped<ITokenService, TokenService>();
-            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddServices();
 
             // Add Database Context
             builder.Services.AddDbContext<CampusFestDbContext>(options => options.UseLazyLoadingProxies().UseSqlServer(connectionString: builder.Configuration.GetConnectionString("default")));

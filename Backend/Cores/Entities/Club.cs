@@ -20,19 +20,13 @@ namespace Backend.Cores.Entities
         [ForeignKey(nameof(Campus))]
         public int CampusId { get; set; }
 
-        [Required(ErrorMessage = "Club must have a manager")]
-        [ForeignKey(nameof(Account))]
-        public Guid ManagerId { get; set; }
-
         public bool IsActive { get; set; } = true;
 
         public bool IsDeleted { get; set; } = false;
 
-        public virtual Account Manager { get; set; } = null!;
-
         public virtual Campus Campus { get; set; } = null!;
 
-        public virtual IEnumerable<ClubEventStaff> Staffs { get; set; } = Enumerable.Empty<ClubEventStaff>();
+        public virtual IEnumerable<Account> Staffs { get; set; } = Enumerable.Empty<Account>();
 
         public virtual IEnumerable<Event> Events { get; set; } = Enumerable.Empty<Event>();
     }

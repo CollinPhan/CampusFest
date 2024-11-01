@@ -36,7 +36,7 @@ namespace Backend.Cores.Entities
 
         [Required(ErrorMessage = "Club is required")]
         [ForeignKey(nameof(Club))]
-        public Guid club {  get; set; }
+        public Guid ClubId {  get; set; }
 
         public virtual Club Club { get; set; } = null!;
 

@@ -17,6 +17,15 @@ namespace Backend.Cores.Entities
         [Required(AllowEmptyStrings = false, ErrorMessage = "Account Email Is Required")]
         public string Email { get; set; } = string.Empty;
 
+        [ForeignKey(nameof(Entities.Role))]
+        public int RoleId { get; set; }
+
+        [ForeignKey(nameof(Club))]
+        public Guid? ClubId { get; set; }
+
+        [ForeignKey(nameof(Campus))]
+        public int? CampusId { get; set; }
+
         public string Avatar { get; set; } = string.Empty;
 
         public string Phone { get; set; } = string.Empty;
@@ -31,10 +40,10 @@ namespace Backend.Cores.Entities
 
         public DateTime LastUpdatedTime { get; set; } = DateTime.UtcNow;
 
-        public virtual IList<Role> Roles { get; set; } = new List<Role>();
+        public virtual Role Role { get; set; } = null!;
 
-        public virtual ClubEventStaff ClubStaff { get; set; } = null!;
+        public virtual Club? Club { get; set; } = null!;
 
-        public virtual IEnumerable<Event> EventStaff { get; set; } = Enumerable.Empty<Event>();
+        public virtual Campus? Campus { get; set; } = null;
     }
 }

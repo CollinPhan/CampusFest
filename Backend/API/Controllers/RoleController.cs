@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.DTO;
 using Backend.Cores.ViewModels;
-using Backend.Infrastructures.Data.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

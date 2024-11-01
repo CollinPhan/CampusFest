@@ -1,4 +1,4 @@
-﻿using Backend.Infrastructures.Data.DTO;
+﻿using Backend.Cores.DTO;
 
 namespace Backend.API.Services.Interface
 {

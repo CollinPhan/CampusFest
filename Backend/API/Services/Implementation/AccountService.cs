@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.DTO;
 using Backend.Cores.Entities;
 using Backend.Cores.Exceptions;
 using Backend.Cores.ViewModels;
-using Backend.Infrastructures.Data.DTO;
 using Backend.Infrastructures.Repositories.Interface;
 using Backend.Utilities.Helpers;
 using Microsoft.Identity.Client;
@@ -59,7 +59,7 @@ namespace Backend.API.Services.Implementation
             }
             
             // Checking for a valid email address.
-            if (ValidationHelper.ValidateString(accountInfo.Email, @"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"))
+            if (!ValidationHelper.ValidateString(accountInfo.Email, @"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"))
             {
                 ExceptionGenerator.GenericServiceException<BaseServiceException>(
                     message: "Email address is invalid", 
@@ -70,6 +70,17 @@ namespace Backend.API.Services.Implementation
                     value: accountInfo.Email);
             }
 
+            if (!ValidationHelper.ValidateString(accountInfo.Phone, @"^[\d]{9,11}$"))
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Phone number is invalid",
+                   error: "Account_Creation_Exception",
+                   type: "Invalid",
+                   summary: "Phone number is invalid",
+                   detail: "The phone number should be 9 to 11 digit in length.",
+                   value: accountInfo.Email);
+            }
+
             // Checking for a valid password.
             if (!ValidationHelper.ValidateString(accountInfo.Password, @"^(?=.*[A-Za-z])(?=.*\d)[\d\w!@#$%^&*_]{8,30}$"))
             {
@@ -78,34 +89,33 @@ namespace Backend.API.Services.Implementation
                     error: "Account_Creation_Exception",
                     type: "Invalid",
                     summary: "Password is invalid",
-                    detail: @"The password should at least 8 character in length, you might use special characters such as '!@#$%^&*_' while creating password.",
+                    detail: @"The password should at least 8 character in length with at least one numeric digit, you also can use special characters such as '!@#$%^&*_' while creating password.",
                     value: accountInfo.Password);
             }
             
             var entity = mapper.Map<Account>(accountInfo);
 
             // Checking for valid role.
-            foreach (string role in accountInfo.Roles)
+            
+            var roleEntity = (await roleRepo.FindFirstMatch(x => x.Name == accountInfo.Role));
+
+            if (roleEntity == null)
             {
-                var roleEntity = (await roleRepo.FindFirstMatch(x => x.Name == role));
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    message: "User role is invalid",
+                    error: "Account_Creation_Exception",
+                    type: "Invalid",
+                    summary: "Role data not found",
+                    detail: @"There is no role data found for the provided role name",
+                    value: accountInfo.Role);
 
-                if (roleEntity == null)
-                {
-                    ExceptionGenerator.GenericServiceException<BaseServiceException>(
-                       message: "User role is invalid",
-                       error: "Account_Creation_Exception",
-                       type: "Invalid",
-                       summary: "Role data not found",
-                       detail: @"There is no role data found for the provided role name",
-                       value: role);
-
-                    return;
-                }
-
-                entity.Roles.Add(roleEntity);
+                return;
             }
 
-            Console.WriteLine(entity.Roles.Count);
+            entity.CreatedTime = DateTime.UtcNow;
+            entity.LastUpdatedTime = DateTime.UtcNow;
+            entity.RoleId = roleEntity.Id;
+            entity.Role = roleEntity;
             
             // Create a hashed password.
             entity.Password = HashPassword(entity.Password); //  Create pasword hash using SHA256 hashing alogrithm
@@ -120,15 +130,15 @@ namespace Backend.API.Services.Implementation
 
             if (entity == null)
             {
-                var exception = new Exception("Account information not found");
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    "Account information not found", 
+                    "Account_Exception", 
+                    "notFound", 
+                    "Account information not found", 
+                    "Account information not found for given Id", 
+                    accountId);
 
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Not_Existed");
-                exception.Data.Add("type", "NotFound");
-                exception.Data.Add("value", accountId);
-
-                throw exception;
+                return null!;
             }
 
             return mapper.Map<Account, AccountDTO>(entity);
@@ -136,9 +146,11 @@ namespace Backend.API.Services.Implementation
 
         public async Task<AccountDTO> GetAccountInformation(string username, string password)
         {
-            Expression<Func<Account, bool>> predicate = x => (x.Username == username || x.Email == username)&& x.Password == HashPassword(password);
+            Expression<Func<Account, bool>> predicate = x => (x.Username == username || x.Email == username) && x.Password == HashPassword(password);
 
-            var entity = await accountRepo.FindFirstMatch(predicate);
+            var entity = await accountRepo.FindFirstMatch(predicate, x => x.Role);
+            
+            Console.WriteLine(entity != null);
 
             if (entity == null)
             {
@@ -149,7 +161,6 @@ namespace Backend.API.Services.Implementation
                    summary: "Wrong username or password",
                    detail: "Wrong username or password",
                    value: username);
-
                 return null!;
             }
 
@@ -166,7 +177,7 @@ namespace Backend.API.Services.Implementation
                     && (IncludeDeleted ? true : x.IsDeleted == false)
                     && (OnlyVerified ? x.IsVerified == true : true);
 
-            IEnumerable<string> includeProperty = new List<string> { "Roles" };
+            IEnumerable<string> includeProperty = new List<string> { "Role" };
 
             Expression<Func<Account, object>> sortByExpression = null!;
 
@@ -206,7 +217,6 @@ namespace Backend.API.Services.Implementation
                    summary: "User id is not valid",
                    detail: @"There is no account with provided id exist",
                    value: accountId);
-
                 return;
             }
 
@@ -253,6 +263,7 @@ namespace Backend.API.Services.Implementation
                     summary: "New password is invalid",
                     detail: @"The password length should be between 8 character in length, you might use special characters such as '!@#$%^&*_' while creating password.",
                     value: account.Password);
+                return;
             }
 
             target.Fullname = account.Fullname;
@@ -443,15 +454,14 @@ namespace Backend.API.Services.Implementation
 
             if (result == null)
             {
-                var exception = new Exception("Username or password is incorrect");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Role_Exception");
-                exception.Data.Add("detail", "Role_Not_Exsited");
-                exception.Data.Add("type", "Invalid");
-                exception.Data.Add("value", roleId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Role does not exist",
+                   error: "Role_Exception",
+                   type: "Invalid",
+                   summary: "Role does not exist.",
+                   detail: @"There is no role exist for the provided roleId.",
+                   value: roleId);
+                return null!;
             }
 
             return mapper.Map<Role,RoleDTO>(result);
@@ -469,14 +479,37 @@ namespace Backend.API.Services.Implementation
             await roleRepo.Create(entity);
         }
 
-        public Task UpdateRole(RoleDTO roleInformation)
+        public async Task UpdateRole(RoleDTO roleInformation)
         {
-            throw new NotImplementedException();
+            var entity = await roleRepo.GetById(roleInformation.Id);
+
+            if (entity == null)
+            {
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "Role does not exist",
+                   error: "Role_Exception",
+                   type: "Invalid",
+                   summary: "Role does not exist.",
+                   detail: @"There is no role exist for the provided roleId.",
+                   value: roleInformation.Id);
+                return;
+            }
+
+            entity.Name = roleInformation.Name;
+
+            await roleRepo.Update(entity);
         }
 
         public Task RemoveRole(int roleId)
         {
-            throw new NotImplementedException();
+            ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   message: "You can not delete role!",
+                   error: "Role_Deletion_Exception",
+                   type: "Invalid",
+                   summary: "You can not remove system role",
+                   detail: @"This function will cause inconsistency and data loss so we decided to just barred everyone from using it. :p",
+                   value: roleId);
+            return null!;
         }
         protected virtual void Dispose(bool disposing)
         {

@@ -1,8 +1,10 @@
 ﻿using System.Reflection;
 using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.DTO;
+using Backend.Cores.Exceptions;
 using Backend.Cores.ViewModels;
-using Backend.Infrastructures.Data.DTO;
+using Backend.Utilities.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -60,8 +62,7 @@ namespace Backend.API.Controllers
         public async Task<IActionResult> CreateNewUser([FromBody] AccountCreationModel accountInfo)
         {
             var account = mapper.Map<AccountCreationModel, AccountDTO>(accountInfo);
-
-            account.Roles = new List<string>() { "Visitor" };
+            account.Role = "Visitor";
 
             await accountService.AddAccount(account);
             
@@ -94,28 +95,26 @@ namespace Backend.API.Controllers
 
             if (account == null)
             {
-                var exception = new Exception("Can not find account information with given id");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Account_Exception");
-                exception.Data.Add("detail", "Account_Invalid");
-                exception.Data.Add ("type", "Invalid");
-                exception.Data.Add("value", userId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                    "Can not find account information with given id",
+                    "Account_Verify_Request_Exception",
+                    "Invalid",
+                    "Accountt information not found",
+                    "The given id does not match for any existing account",
+                    userId);
+                return null!;
             }
 
             if ( account.IsVerified)
             {
-                var exception = new Exception("The account is already verified");
-
-                // Add Data to Exception
-                exception.Data.Add("error", "Verification_Exception");
-                exception.Data.Add("detail", "Account_Already_Verified");
-                exception.Data.Add ("type", "Invalid");
-                exception.Data.Add("value", userId);
-
-                throw exception;
+                ExceptionGenerator.GenericServiceException<BaseServiceException>(
+                   "Account has already been verified before",
+                   "Account_Verify_Request_Exception",
+                   "Unauthorized",
+                   "Account has been verified",
+                   "The target account has already been verified",
+                   userId);
+                return null!;
             }
 
             var token = await tokenService.CreateToken(account.Id, "verifyUserAccount", tokenService.CreateRandomToken(10), 1440);

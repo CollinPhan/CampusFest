@@ -1,5 +1,5 @@
-﻿using Backend.Cores.ViewModels;
-using Backend.Infrastructures.Data.DTO;
+﻿using Backend.Cores.DTO;
+using Backend.Cores.ViewModels;
 
 namespace Backend.API.Services.Interface
 {

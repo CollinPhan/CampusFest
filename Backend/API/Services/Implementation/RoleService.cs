@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.DTO;
 using Backend.Cores.Entities;
-using Backend.Infrastructures.Data.DTO;
 using Backend.Infrastructures.Repositories.Interface;
 using Microsoft.Identity.Client;
 using System.Linq.Expressions;

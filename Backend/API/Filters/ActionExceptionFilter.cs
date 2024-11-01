@@ -12,36 +12,38 @@ namespace Backend.API.Filters
             // Only handle exceptions that inherits from BaseServiceException
             if (context.Exception is BaseServiceException)
             {
+                int status_code = 400;
+
                 // Swtiching status code base on type of the error in the exception.
                 switch (context.Exception.Data["type"])
                 {
-                    case "invalid":
-                        context.HttpContext.Response.StatusCode = 400;
+                    case "Invalid":
+                        status_code = 400;
                         break;
-                    case "unauthorized":
-                        context.HttpContext.Response.StatusCode = 401;
+                    case "Unauthorized":
+                        status_code = 401;
                         break;
-                    case "notpermitted":
-                        context.HttpContext.Response.StatusCode = 403;
+                    case "NotPermitted":
+                        status_code = 403;
                         break;
-                    case "notfound":
-                        context.HttpContext.Response.StatusCode = 404;
+                    case "NotFound":
+                        status_code = 404;
                         break;
-                    case "unacceptable":
-                        context.HttpContext.Response.StatusCode = 406;
+                    case "Unacceptable":
+                        status_code = 406;
                         break;
-                    case "conflict":
-                        context.HttpContext.Response.StatusCode = 409;
+                    case "Conflict":
+                        status_code = 409;
                         break;
-                    case "teapot":
-                        context.HttpContext.Response.StatusCode = 418;
+                    case "Teapot":
+                        status_code = 418;
                         break;
                     default:
                         break;
                 }
 
                 // Return error
-                context.Result = new ObjectResult(context.Exception.Data) { StatusCode = 400 };
+                context.Result = new ObjectResult(context.Exception.Data) { StatusCode = status_code };
             }
            
         }

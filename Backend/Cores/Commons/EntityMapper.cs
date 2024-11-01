@@ -53,10 +53,11 @@ namespace Backend.Cores.Commons
             CreateMap<AccountDTO, AccountUpdateModel>()
                 .ForMember(destination => destination.AccountId, action => action.MapFrom(source => source.Id))
                 .ForMember(destination => destination.Username, action => action.MapFrom(source => source.Username))
+                .ForMember(destination => destination.Password, action => action.MapFrom(source => source.Password))
                 .ForMember(destination => destination.Email, action => action.MapFrom(source => source.Email))
                 .ForMember(destination => destination.Phone, action => action.MapFrom(source => source.Phone))
                 .ForMember(destination => destination.Fullname, action => action.MapFrom(source => source.Fullname))
-                .ForMember(destination => destination.Roles, action => action.MapFrom(source => source.Role))
+                .ForMember(destination => destination.Role, action => action.MapFrom(source => source.Role))
                 .ReverseMap();
 
             CreateMap<AccountDTO, AccountPublicViewModel>()
@@ -104,19 +105,23 @@ namespace Backend.Cores.Commons
             CreateMap<Campus, CampusDTO>().ReverseMap();
 
             CreateMap<CampusDTO, CampusPublicViewModel>()
-                .ForMember(destination => destination.Name,action => action.MapFrom(source => source.Name))
+                .ForMember(destination => destination.Name, action => action.MapFrom(source => source.Name))
                 .ForMember(destination => destination.Email, action => action.MapFrom(source => source.Email))
                 .ForMember(destination => destination.Address, action => action.MapFrom(source => source.Address))
                 .ForMember(destination => destination.Phone, action => action.MapFrom(source => source.Phone))
-                .ForMember(destination => destination.Description, action => action.MapFrom(source => source.Description))
+                .ForMember(destination => destination.Description, action => action.MapFrom(source => source.Description));
+
+
+            CreateMap<CampusDTO, CampusCreationModel>()
                 .ReverseMap();
 
+            CreateMap<CampusDTO, CampusUpdateModel>()
+                .ReverseMap();
             // Club related
 
             CreateMap<Club, ClubDTO>().ReverseMap();
 
-            CreateMap<ClubDTO, ClubPublicViewModel>()
-                .ForMember(destination => destination.);
+            CreateMap<ClubDTO, ClubPublicViewModel>();
 
             // Event related
             CreateMap<Event, EventDTO>()

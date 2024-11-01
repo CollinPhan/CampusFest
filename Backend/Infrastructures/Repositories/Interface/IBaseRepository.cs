@@ -31,6 +31,14 @@ namespace Backend.Infrastructures.Repositories.Interface
         Task<T?> FindFirstMatch(Expression<Func<T, bool>> predicate);
 
         /// <summary>
+        /// Return the first found record (no sorting) that's sastisfies the input condition if found, else return null.
+        /// </summary>
+        /// <param name="predicate">The condition for the search</param>
+        /// <param name="include">The include property if entity found.</param>
+        /// <returns><seealso cref="{T}"/> if found, else <seealso cref="null"/></returns>
+        Task<T?> FindFirstMatch(Expression<Func<T, bool>> predicate, Expression<Func<T, object>> include);
+
+        /// <summary>
         /// Return all record of the entity set in the database.
         /// </summary>
         /// <returns><seealso cref="IEnumerable{T}"/></returns>

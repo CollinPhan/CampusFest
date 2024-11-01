@@ -66,7 +66,6 @@ namespace Backend.Infrastructures.Repositories.Implementation
                 }
             }
             
-
             // Sort
             if (orderBy != null)
             {
@@ -118,6 +117,11 @@ namespace Backend.Infrastructures.Repositories.Implementation
         public async Task<T?> FindFirstMatch(Expression<Func<T, bool>> predicate)
         {
             return await Set.Where(predicate).FirstOrDefaultAsync();
+        }
+
+        public async Task<T?> FindFirstMatch(Expression<Func<T, bool>> predicate, Expression<Func<T, object>> includes)
+        {
+            return await Set.Where(predicate).Include(includes).FirstOrDefaultAsync();
         }
 
         public async Task<bool> IsExist<Tid>(Tid id)

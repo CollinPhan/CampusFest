@@ -1,4 +1,4 @@
-﻿using Backend.Infrastructures.Data.DTO;
+﻿using Backend.Cores.DTO;
 using System.Linq.Expressions;
 
 namespace Backend.API.Services.Interface

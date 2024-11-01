@@ -1,7 +1,7 @@
 using AutoMapper;
 using Backend.API.Services.Interface;
+using Backend.Cores.DTO;
 using Backend.Cores.ViewModels;
-using Backend.Infrastructures.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -39,14 +39,14 @@ namespace Backend.API.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> AuthenticateUser([FromBody] AccountAuthorizationViewModel authorizationInfo)
+        public async Task<IActionResult> AuthenticateUser([FromBody] AccountAuthorizationModel authorizationInfo)
         {
             AccountDTO account = await accountService.GetAccountInformation(authorizationInfo.Username, authorizationInfo.Password);
 
             Dictionary<string, string> tokenInformation = new Dictionary<string, string>();
 
             tokenInformation.Add("user", account.Id.ToString());
-            tokenInformation.Add("roles", String.Join(",", account.Roles));
+            tokenInformation.Add("roles", String.Join(",", account.Role));
             tokenInformation.Add("verified", account.IsVerified ? "Yes" : "No");
 
 

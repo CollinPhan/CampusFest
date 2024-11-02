@@ -57,16 +57,16 @@ namespace Backend.API.Services.Implementation
                     detail: "The email address has already been taken.",
                     value: accountInfo.Email);
             }
-            
+
             // Checking for a valid email address.
             if (!ValidationHelper.ValidateString(accountInfo.Email, @"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"))
             {
                 ExceptionGenerator.GenericServiceException<BaseServiceException>(
-                    message: "Email address is invalid", 
-                    error:"Account_Creation_Exception", 
+                    message: "Email address is invalid",
+                    error: "Account_Creation_Exception",
                     type: "Invalid",
-                    summary:"Email address is invalid",
-                    detail:"The email address does not valid. Please retry with another email (Ex: exapmle@gmail.com)",
+                    summary: "Email address is invalid",
+                    detail: "The email address does not valid. Please retry with another email (Ex: exapmle@gmail.com)",
                     value: accountInfo.Email);
             }
 
@@ -92,11 +92,11 @@ namespace Backend.API.Services.Implementation
                     detail: @"The password should at least 8 character in length with at least one numeric digit, you also can use special characters such as '!@#$%^&*_' while creating password.",
                     value: accountInfo.Password);
             }
-            
+
             var entity = mapper.Map<Account>(accountInfo);
 
             // Checking for valid role.
-            
+
             var roleEntity = (await roleRepo.FindFirstMatch(x => x.Name == accountInfo.Role));
 
             if (roleEntity == null)
@@ -116,7 +116,7 @@ namespace Backend.API.Services.Implementation
             entity.LastUpdatedTime = DateTime.UtcNow;
             entity.RoleId = roleEntity.Id;
             entity.Role = roleEntity;
-            
+
             // Create a hashed password.
             entity.Password = HashPassword(entity.Password); //  Create pasword hash using SHA256 hashing alogrithm
 
@@ -131,11 +131,11 @@ namespace Backend.API.Services.Implementation
             if (entity == null)
             {
                 ExceptionGenerator.GenericServiceException<BaseServiceException>(
-                    "Account information not found", 
-                    "Account_Exception", 
-                    "notFound", 
-                    "Account information not found", 
-                    "Account information not found for given Id", 
+                    "Account information not found",
+                    "Account_Exception",
+                    "notFound",
+                    "Account information not found",
+                    "Account information not found for given Id",
                     accountId);
 
                 return null!;
@@ -189,7 +189,7 @@ namespace Backend.API.Services.Implementation
                     break;
                 default:
                     break;
-            }    
+            }
 
             var result = await accountRepo.GetPaginated(page, page_size, includeProperty, filterExpression, sortByExpression, false, isDecending);
 
@@ -299,11 +299,11 @@ namespace Backend.API.Services.Implementation
 
             await accountRepo.Update(target);
         }
-        
+
         public async Task UpdatePassword(Guid accountId, string password)
         {
             var target = await accountRepo.GetById(accountId);
-            
+
             if (target == null)
             {
                 ExceptionGenerator.GenericServiceException<BaseServiceException>(
@@ -421,7 +421,7 @@ namespace Backend.API.Services.Implementation
             await accountRepo.Update(target);
         }
 
-        private byte[] GenerateSalt(int length) 
+        private byte[] GenerateSalt(int length)
         {
             return RandomNumberGenerator.GetBytes(length);
         }
@@ -429,7 +429,7 @@ namespace Backend.API.Services.Implementation
         private string HashPassword(string password, byte[] salt)
         {
             byte[] HashedPassword = Rfc2898DeriveBytes.Pbkdf2(password, salt, 3000, HashAlgorithmName.SHA256, 256);
-            
+
             return Convert.ToHexString(HashedPassword);
         }
 
@@ -456,7 +456,7 @@ namespace Backend.API.Services.Implementation
                 return null!;
             }
 
-            return mapper.Map<Role,RoleDTO>(result);
+            return mapper.Map<Role, RoleDTO>(result);
         }
 
         public async Task<IEnumerable<RoleDTO>> GetRoles()

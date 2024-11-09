@@ -20,16 +20,10 @@ namespace Backend.Cores.Entities
         public long Price { get; set; }
 
         [Required(ErrorMessage = "Event start date can not be empty")]
-        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
 
         [Required(ErrorMessage = "Event end date can not be empty")]
-        public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        [Required(ErrorMessage = "Event start time can not be empty")]
-        public TimeOnly StartTime = TimeOnly.FromDateTime(DateTime.UtcNow);
-
-        [Required(ErrorMessage = "Event end time can not be empty")]
-        public TimeOnly EndTime = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(1));
+        public DateTime EndDate { get; set; } = DateTime.UtcNow;
 
         [Required(ErrorMessage = "Event capacity is required")]
         public int Capacity { get; set; } = 0;

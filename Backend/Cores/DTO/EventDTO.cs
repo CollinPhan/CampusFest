@@ -24,6 +24,10 @@
 
         public int Capacity { get; set; } = 0;
 
+        public int Campus { get; set; }
+
         public Guid Club { get; set; }
+
+        public Guid OperatorId { get; set; }
     }
 }

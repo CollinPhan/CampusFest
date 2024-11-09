@@ -54,7 +54,7 @@ namespace Backend.Infrastructures.Repositories.Implementation
             // Filter
             if (filter != null)
             {
-                result = result.Where(filter).AsQueryable();
+                result = result.Where(filter);
             }
 
             // Include

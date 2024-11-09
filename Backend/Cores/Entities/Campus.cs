@@ -19,9 +19,9 @@ namespace Backend.Cores.Entities
         
         public string Description { get; set; } = string.Empty;
 
-        public virtual IEnumerable<Club> Clubs { get; set; } = Enumerable.Empty<Club>();
+        public virtual IEnumerable<Club> Clubs { get; set; } = new List<Club>();
 
-        public virtual IEnumerable<Account> Accounts { get; set; } = Enumerable.Empty<Account>();
+        public virtual IEnumerable<Account> Accounts { get; set; } =new List<Account>();
 
     }
 }

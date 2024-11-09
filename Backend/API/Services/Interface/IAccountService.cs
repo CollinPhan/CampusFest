@@ -1,5 +1,7 @@
 ﻿using Backend.Cores.DTO;
+using Backend.Cores.Entities;
 using Backend.Cores.ViewModels;
+using System.Linq.Expressions;
 
 namespace Backend.API.Services.Interface
 {
@@ -8,6 +10,8 @@ namespace Backend.API.Services.Interface
         Task<AccountDTO> GetAccountInformation(Guid accountId);
 
         Task<AccountDTO> GetAccountInformation(string username, string password);
+
+        Task<IEnumerable<AccountDTO>> GetAccountPaginated(int page, int page_size, List<string> includes, Expression<Func<Account, bool>> predicate);
 
         Task<IEnumerable<AccountDTO>> GetAccountPaginated(int page, int page_size, string username = "", string fullname = "", string email = "", string phone = "", string sortby = "", bool IncludeDeleted = false, bool OnlyVerified = false, bool isDecending = false);
 
@@ -36,5 +40,7 @@ namespace Backend.API.Services.Interface
         Task UpdateRole(RoleDTO roleInformation);
 
         Task RemoveRole(int roleId);
+
+        Task<bool> ValidateAccountRegisterInformation(AccountDTO account);
     }
 }

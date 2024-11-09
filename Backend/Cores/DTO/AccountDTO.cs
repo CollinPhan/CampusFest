@@ -26,6 +26,8 @@
 
         public DateTime LastUpdated { get; set; }
 
+        public int RoleId { get; set; } = 0;
+
         public string Role { get; set; } = string.Empty;
     }
 }

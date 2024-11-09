@@ -79,8 +79,6 @@ namespace Backend.API.Services.Implementation
 
             var byteSignature = Rfc2898DeriveBytes.Pbkdf2(signature, Encoding.UTF8.GetBytes(expiration.ToString(timeFormat)), 32, HashAlgorithmName.SHA256, 32);
 
-            Console.WriteLine(bodySection);
-
             return $"{Convert.ToBase64String(Encoding.UTF8.GetBytes(headerSection))}.{Convert.ToBase64String(Encoding.UTF8.GetBytes(bodySection))}.{Convert.ToBase64String(byteSignature)}";
         }
 
@@ -103,7 +101,7 @@ namespace Backend.API.Services.Implementation
 
         public string CreateRandomToken(int length = 10)
         {
-            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!=_-@#$%";
+            var chars = "0123456789";
             var stringChars = new char[8];
             var random = new Random();
 

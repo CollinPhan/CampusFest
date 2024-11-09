@@ -38,7 +38,6 @@ namespace Backend.Utilities.Helpers
             {
                 foreach (var item in data)
                 {
-                    Console.WriteLine(item.Key);
                     exception.AddData(item.Key, item.Value);
                 }
             }

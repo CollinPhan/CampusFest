@@ -2,6 +2,7 @@
 using AutoMapper;
 using Backend.API.Services.Interface;
 using Backend.Cores.DTO;
+using Backend.Cores.Entities;
 using Backend.Cores.Exceptions;
 using Backend.Cores.ViewModels;
 using Backend.Utilities.Helpers;
@@ -45,8 +46,6 @@ namespace Backend.API.Controllers
 
             Dictionary<string,string> data = await tokenService.DecodeJwtToken(token.Split(" ")[1]); // Only getting the token without the "Bearer" part.
 
-            Console.WriteLine(string.Join(" ", data.Keys));
-
             return Ok(await accountService.GetAccountInformation(Guid.Parse(data["user"])));
         }
 
@@ -64,17 +63,19 @@ namespace Backend.API.Controllers
             var account = mapper.Map<AccountCreationModel, AccountDTO>(accountInfo);
             account.Role = "Visitor";
 
+            await accountService.ValidateAccountRegisterInformation(account);
+
             await accountService.AddAccount(account);
-            
+
             var token = await tokenService.CreateToken(account.Id, "verifyUserAccount", tokenService.CreateRandomToken(10), 1440);
 
             string emailSubject = "Account verification";
             
-            string emailBody = System.IO.File.ReadAllText($"{Directory.GetCurrentDirectory()}\\Utilities\\Html\\verification.html").Replace("[0]", token.TokenValue);
+            string emailBody = System.IO.File.ReadAllText($"{Directory.GetCurrentDirectory()}\\Utilities\\Html\\verification.html").Replace("[0]", account.Fullname).Replace("[1]", token.TokenValue);
 
             await emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
 
-            return Created();
+            return Created($"{HttpContext.Request.Host}", account.Id);
         }
 
         [AllowAnonymous]
@@ -84,6 +85,16 @@ namespace Backend.API.Controllers
             Guid userId = await tokenService.VerifyToken(token, "verifyUserAccount");   
             await tokenService.DeleteToken(token);
             await accountService.UpdateVerificationStatus(userId, true);
+
+            var account = await accountService.GetAccountInformation(userId);
+
+            string emailSubject = "Account verified";
+
+            string emailBody = $"Welcome onboard, {account.Fullname}! You just verified your account";
+
+            await emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
+
+
             return NoContent();
         }
 

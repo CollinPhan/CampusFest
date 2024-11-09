@@ -41,7 +41,6 @@ namespace Backend.Infrastructures.Data
             });
 
             Guid adminId = Guid.NewGuid();
-            Console.WriteLine(adminId);
             string email = configuration.GetValue<string>("Email:Address") ?? throw new Exception("No scetion found for Email:Address");
             modelBuilder.Entity<Account>()
                 .HasData(

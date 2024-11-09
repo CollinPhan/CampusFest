@@ -27,7 +27,7 @@ namespace Backend
             // Setup Cors
             builder.Services.AddCors(options =>
                 options.AddPolicy("defaultPolicy",
-                    policy => policy.AllowAnyOrigin().AllowAnyMethod()
+                    policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
                 )
             );
 

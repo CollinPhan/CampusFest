@@ -25,7 +25,7 @@ namespace Backend.Cores.Entities
 
         public DateTime RegisteredTime { get; set; }
 
-        public DateTime CheckinTime { get; set; }
+        public DateTime? CheckinTime { get; set; }
 
         public virtual Account Account { get; set; } = null!;
 

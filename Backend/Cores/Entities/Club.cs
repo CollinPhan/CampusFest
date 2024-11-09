@@ -26,8 +26,8 @@ namespace Backend.Cores.Entities
 
         public virtual Campus Campus { get; set; } = null!;
 
-        public virtual IEnumerable<Account> Staffs { get; set; } = Enumerable.Empty<Account>();
+        public virtual ICollection<Account> Staffs { get; set; } = new List<Account>();
 
-        public virtual IEnumerable<Event> Events { get; set; } = Enumerable.Empty<Event>();
+        public virtual ICollection<Event> Events { get; set; } = new List<Event>();
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Infrastructures.Migrations
 {
     [DbContext(typeof(CampusFestDbContext))]
-    [Migration("20241101034324_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20241109084817_HelloWorld")]
+    partial class HelloWorld
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,14 +92,14 @@ namespace Backend.Infrastructures.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("4cf5c11b-8f8a-4959-ad93-d5558fb1b6e7"),
+                            Id = new Guid("09865b68-5812-47a9-abe7-f59fb48ba5d8"),
                             Avatar = "",
-                            CreatedTime = new DateTime(2024, 11, 1, 10, 43, 22, 584, DateTimeKind.Local).AddTicks(8858),
+                            CreatedTime = new DateTime(2024, 11, 9, 15, 48, 17, 385, DateTimeKind.Local).AddTicks(5354),
                             Email = "[Your email goes here]",
                             Fullname = "Collin",
                             IsDeleted = false,
                             IsVerified = true,
-                            LastUpdatedTime = new DateTime(2024, 11, 1, 3, 43, 22, 584, DateTimeKind.Utc).AddTicks(8880),
+                            LastUpdatedTime = new DateTime(2024, 11, 9, 8, 48, 17, 385, DateTimeKind.Utc).AddTicks(5382),
                             Password = "BCE37EEE9DFA8D910FA103096F49A341B741FA698BF07E6771C1BF9653B38A80370465623389C702CBC686C760C7D377A394299AA39C2EFCFEFE25A58DFE3400948DEC030F350DA467E5DC0A690183F326980470AB1E560CB35784F51BCB2007AE9CE57BFB55D5C58E3DC3D0F134BE3AD114DEA64BA57C2938391AC8AC17E22C746397DF1F2EA0498FCB0B3FA4AFFB04C4157EF371DCD01D34CA8725DF295DEA3AB0F91AA83C63A7327394E013F795796AE54ABBB88280848C4C18CA86A0350CC65D2B0427678268C36BBBE07E4B0539C4DF98BC79B14CC21022F5BC36CFB4D1B135E3F9D14741850696B0193347936D56A135559AD1C989DFBAB39F71A9B451",
                             Phone = "",
                             RoleId = 1,
@@ -212,6 +212,9 @@ namespace Backend.Infrastructures.Migrations
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -233,12 +236,9 @@ namespace Backend.Infrastructures.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
-                    b.Property<Guid>("club")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("club");
+                    b.HasIndex("ClubId");
 
                     b.ToTable("Events");
                 });
@@ -252,7 +252,7 @@ namespace Backend.Infrastructures.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinTime")
+                    b.Property<DateTime?>("CheckinTime")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("EventId")
@@ -397,7 +397,7 @@ namespace Backend.Infrastructures.Migrations
                 {
                     b.HasOne("Backend.Cores.Entities.Club", "Club")
                         .WithMany("Events")
-                        .HasForeignKey("club")
+                        .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

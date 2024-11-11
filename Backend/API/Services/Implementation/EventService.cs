@@ -173,8 +173,8 @@ namespace Backend.API.Services.Implementation
             var end = eventInformation.EndDate.ToDateTime(eventInformation.EndTime);
 
             Expression<Func<Event, bool>> current_active_event_filter = x =>
-            (x.StartDate >= start && x.StartDate <= end)
-            || (x.EndDate >= start && x.EndDate <= end);
+            ((x.StartDate >= start && x.StartDate <= end)
+            || (x.EndDate >= start && x.EndDate <= end)) && x.Id != eventInformation.Id;
 
             var current_active_event_in_time_range = await eventRepo.GetPaginated(1, int.MaxValue, null!, current_active_event_filter);
 

@@ -73,5 +73,20 @@ namespace Backend.API.Controllers
 
             return Ok(await eventService.CreateEvent(eventDto));
         }
+
+        [HttpPut]
+        public async Task<ActionResult> UpdateEvent(EventUpdateModel eventInfo)
+        {
+            var DTO = mapper.Map<EventUpdateModel, EventDTO>(eventInfo);
+
+            if(!await eventService.ValidateEventInformation(DTO))
+            {
+                return BadRequest();
+            }
+
+            await eventService.UpdateEvent(DTO);
+
+            return NoContent();
+        }
     }
 }

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Backend.Infrastructures.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class HelloWorld : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -118,14 +118,14 @@ namespace Backend.Infrastructures.Migrations
                     StartDate = table.Column<DateOnly>(type: "date", nullable: false),
                     EndDate = table.Column<DateOnly>(type: "date", nullable: false),
                     Capacity = table.Column<int>(type: "int", nullable: false),
-                    club = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    ClubId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Events", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Events_Clubs_club",
-                        column: x => x.club,
+                        name: "FK_Events_Clubs_ClubId",
+                        column: x => x.ClubId,
                         principalTable: "Clubs",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -165,7 +165,7 @@ namespace Backend.Infrastructures.Migrations
                     QRCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     OTP = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RegisteredTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CheckinTime = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CheckinTime = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -208,7 +208,7 @@ namespace Backend.Infrastructures.Migrations
             migrationBuilder.InsertData(
                 table: "Accounts",
                 columns: new[] { "Id", "Avatar", "CampusId", "ClubId", "CreatedTime", "Email", "Fullname", "IsDeleted", "IsVerified", "LastUpdatedTime", "Password", "Phone", "RoleId", "Username" },
-                values: new object[] { new Guid("4cf5c11b-8f8a-4959-ad93-d5558fb1b6e7"), "", null, null, new DateTime(2024, 11, 1, 10, 43, 22, 584, DateTimeKind.Local).AddTicks(8858), "[Your email goes here]", "Collin", false, true, new DateTime(2024, 11, 1, 3, 43, 22, 584, DateTimeKind.Utc).AddTicks(8880), "BCE37EEE9DFA8D910FA103096F49A341B741FA698BF07E6771C1BF9653B38A80370465623389C702CBC686C760C7D377A394299AA39C2EFCFEFE25A58DFE3400948DEC030F350DA467E5DC0A690183F326980470AB1E560CB35784F51BCB2007AE9CE57BFB55D5C58E3DC3D0F134BE3AD114DEA64BA57C2938391AC8AC17E22C746397DF1F2EA0498FCB0B3FA4AFFB04C4157EF371DCD01D34CA8725DF295DEA3AB0F91AA83C63A7327394E013F795796AE54ABBB88280848C4C18CA86A0350CC65D2B0427678268C36BBBE07E4B0539C4DF98BC79B14CC21022F5BC36CFB4D1B135E3F9D14741850696B0193347936D56A135559AD1C989DFBAB39F71A9B451", "", 1, "SystemAdmin" });
+                values: new object[] { new Guid("09865b68-5812-47a9-abe7-f59fb48ba5d8"), "", null, null, new DateTime(2024, 11, 9, 15, 48, 17, 385, DateTimeKind.Local).AddTicks(5354), "[Your email goes here]", "Collin", false, true, new DateTime(2024, 11, 9, 8, 48, 17, 385, DateTimeKind.Utc).AddTicks(5382), "BCE37EEE9DFA8D910FA103096F49A341B741FA698BF07E6771C1BF9653B38A80370465623389C702CBC686C760C7D377A394299AA39C2EFCFEFE25A58DFE3400948DEC030F350DA467E5DC0A690183F326980470AB1E560CB35784F51BCB2007AE9CE57BFB55D5C58E3DC3D0F134BE3AD114DEA64BA57C2938391AC8AC17E22C746397DF1F2EA0498FCB0B3FA4AFFB04C4157EF371DCD01D34CA8725DF295DEA3AB0F91AA83C63A7327394E013F795796AE54ABBB88280848C4C18CA86A0350CC65D2B0427678268C36BBBE07E4B0539C4DF98BC79B14CC21022F5BC36CFB4D1B135E3F9D14741850696B0193347936D56A135559AD1C989DFBAB39F71A9B451", "", 1, "SystemAdmin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_CampusId",
@@ -241,9 +241,9 @@ namespace Backend.Infrastructures.Migrations
                 column: "EventId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Events_club",
+                name: "IX_Events_ClubId",
                 table: "Events",
-                column: "club");
+                column: "ClubId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Role_Name",

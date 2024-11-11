@@ -46,8 +46,6 @@ namespace Backend.API.Services.Implementation
 
             var result = await clubRepo.GetPaginated(page, page_size, includes, filter, null!, false, false);
 
-            Console.WriteLine(result.Count());
-
             return mapper.Map<IEnumerable<Club>, IEnumerable<ClubDTO>>(result);
         }
 
